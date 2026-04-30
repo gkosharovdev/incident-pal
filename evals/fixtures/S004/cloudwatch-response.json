@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T08:15:00Z",
+      "message": {
+        "level": "ERROR",
+        "event": "profile.update_failed",
+        "customerId": "cust-88",
+        "traceId": "trace-cust-2",
+        "field": "email",
+        "error": "validation.failed: email format invalid after sanitisation",
+        "attemptedValue": "user@@badformat.com"
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T08:15:00Z",
+        "customerId": "cust-88",
+        "traceId": "trace-cust-2"
+      },
+      "raw": "{\"level\":\"ERROR\",\"event\":\"profile.update_failed\",\"customerId\":\"cust-88\",\"traceId\":\"trace-cust-2\",\"field\":\"email\",\"error\":\"validation.failed: email format invalid after sanitisation\",\"attemptedValue\":\"user@@badformat.com\"}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}

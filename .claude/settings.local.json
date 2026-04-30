@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash .specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"ecs-investigation-agent\" \"Build a production investigation agent for AWS ECS services\")",
+      "Bash(bash .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(bash .specify/scripts/bash/check-prerequisites.sh --json)",
+      "Bash(git -C /Users/georgi.kosharov/IdeaProjects/incident-pal rev-parse --git-dir)",
+      "Bash(npm install *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

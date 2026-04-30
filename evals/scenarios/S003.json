@@ -1,0 +1,25 @@
+{
+  "scenarioId": "S003",
+  "observationType": "payment-failure",
+  "description": "Payment for order ord-777 was not processed. Logs show payment-service received the request but a downstream charge API timed out.",
+  "groundTruth": {
+    "likelyFailurePoint": "payment-service-charge-api-timeout",
+    "rootCauseKeywords": ["charge.timeout", "payment.failed", "ChargeFailed"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "payment-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-777" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T09:00:00Z",
+      "to": "2026-04-30T10:00:00Z"
+    },
+    "observationDescription": "Payment for order ord-777 was not processed"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S003/cloudwatch-response.json"
+  }
+}

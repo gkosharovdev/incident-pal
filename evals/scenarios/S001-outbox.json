@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S001-outbox",
+  "observationType": "notification-failure",
+  "description": "Customer cust-42 did not receive notification. Uses NotificationOutboxTool to find failed outbox record. Validates the reference extension tool is called and root cause identified.",
+  "groundTruth": {
+    "likelyFailurePoint": "outbox-dispatch",
+    "rootCauseKeywords": ["smtp-relay", "connection refused", "failed"],
+    "minimumConfidence": "high",
+    "toolMustBeCalled": "notification-outbox"
+  },
+  "input": {
+    "serviceId": "notification-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "customer", "value": "cust-42" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:00:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "Customer cust-42 did not receive order confirmation notification"
+  },
+  "fixtures": {
+    "notification-outbox": "S001-outbox/outbox-response.json"
+  }
+}

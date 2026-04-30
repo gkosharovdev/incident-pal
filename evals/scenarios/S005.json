@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S005",
+  "observationType": "deployment-impact",
+  "description": "Increased error rate observed after an ECS deployment of order-service at 10:30. Root cause: new task definition introduced a configuration regression.",
+  "groundTruth": {
+    "likelyFailurePoint": "ecs-deployment-configuration-regression",
+    "rootCauseKeywords": ["deployment", "taskDefinition", "configuration"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "order-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "http-correlation", "value": "trace-deploy-abc" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:25:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "Increased error rate in order-service after deployment at 10:30"
+  },
+  "fixtures": {
+    "ecs-deployment": "S005/ecs-response.json",
+    "cloudwatch-logs": "S005/cloudwatch-response.json"
+  }
+}

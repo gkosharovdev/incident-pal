@@ -1,0 +1,25 @@
+{
+  "scenarioId": "S006",
+  "observationType": "incorrect-status",
+  "description": "Kafka message tracing cross-service scenario. Dispatch message msg-kafka-55 was consumed but its downstream acknowledgement never arrived.",
+  "groundTruth": {
+    "likelyFailurePoint": "dispatch-consumer-acknowledgement-failure",
+    "rootCauseKeywords": ["consumer.ack_failed", "kafka", "acknowledgement"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "dispatch-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "kafka-message-id", "value": "msg-kafka-55" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T07:00:00Z",
+      "to": "2026-04-30T08:00:00Z"
+    },
+    "observationDescription": "Dispatch message msg-kafka-55 processed but status not updated downstream"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S006/cloudwatch-response.json"
+  }
+}

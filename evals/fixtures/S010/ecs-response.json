@@ -1,0 +1,17 @@
+{
+  "serviceName": "payment-service",
+  "clusterName": "main-cluster",
+  "deploymentsInWindow": [
+    {
+      "deploymentId": "dep-pay-99",
+      "status": "PRIMARY",
+      "taskDefinition": "payment-service:55",
+      "createdAt": "2026-04-30T10:30:00Z",
+      "updatedAt": "2026-04-30T10:35:00Z",
+      "runningCount": 3,
+      "desiredCount": 3
+    }
+  ],
+  "currentRunningCount": 3,
+  "currentDesiredCount": 3
+}

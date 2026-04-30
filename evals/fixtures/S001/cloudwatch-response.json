@@ -1,0 +1,46 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T10:15:00Z",
+      "message": {
+        "level": "INFO",
+        "event": "notification.queued",
+        "customerId": "cust-42",
+        "notificationId": "notif-abc123",
+        "traceId": "trace-xyz789",
+        "type": "order_confirmation"
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T10:15:00Z",
+        "@message": "{\"level\":\"INFO\",\"event\":\"notification.queued\",\"customerId\":\"cust-42\",\"notificationId\":\"notif-abc123\",\"traceId\":\"trace-xyz789\",\"type\":\"order_confirmation\"}",
+        "customerId": "cust-42",
+        "notificationId": "notif-abc123",
+        "traceId": "trace-xyz789"
+      },
+      "raw": "{\"level\":\"INFO\",\"event\":\"notification.queued\",\"customerId\":\"cust-42\",\"notificationId\":\"notif-abc123\",\"traceId\":\"trace-xyz789\",\"type\":\"order_confirmation\"}"
+    },
+    {
+      "timestamp": "2026-04-30T10:15:01Z",
+      "message": {
+        "level": "ERROR",
+        "event": "outbox.dispatch_failed",
+        "customerId": "cust-42",
+        "notificationId": "notif-abc123",
+        "error": "OutboxWorker: connection refused to smtp-relay:25",
+        "traceId": "trace-xyz789",
+        "retryCount": 3
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T10:15:01Z",
+        "@message": "{\"level\":\"ERROR\",\"event\":\"outbox.dispatch_failed\",\"customerId\":\"cust-42\",\"notificationId\":\"notif-abc123\",\"error\":\"OutboxWorker: connection refused to smtp-relay:25\",\"traceId\":\"trace-xyz789\",\"retryCount\":3}",
+        "customerId": "cust-42",
+        "notificationId": "notif-abc123",
+        "traceId": "trace-xyz789"
+      },
+      "raw": "{\"level\":\"ERROR\",\"event\":\"outbox.dispatch_failed\",\"customerId\":\"cust-42\",\"notificationId\":\"notif-abc123\",\"error\":\"OutboxWorker: connection refused to smtp-relay:25\",\"traceId\":\"trace-xyz789\",\"retryCount\":3}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 2048,
+  "unparsedCount": 0
+}

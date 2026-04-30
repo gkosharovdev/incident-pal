@@ -1,0 +1,81 @@
+services:
+  - id: order-service
+    displayName: Order Service
+    environments:
+      - production
+      - staging
+    logGroups:
+      production: /ecs/order-service/production
+      staging: /ecs/order-service/staging
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      orderId: entity-id
+      traceId: http-correlation
+      messageId: kafka-message-id
+    observationTypes:
+      - incorrect-status
+      - payment-failure
+
+  - id: notification-service
+    displayName: Notification Service
+    environments:
+      - production
+      - staging
+    logGroups:
+      production: /ecs/notification-service/production
+      staging: /ecs/notification-service/staging
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      customerId: entity-id
+      traceId: http-correlation
+      notificationId: kafka-message-id
+    observationTypes:
+      - notification-failure
+
+  - id: payment-service
+    displayName: Payment Service
+    environments:
+      - production
+      - staging
+    logGroups:
+      production: /ecs/payment-service/production
+      staging: /ecs/payment-service/staging
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      paymentId: entity-id
+      orderId: entity-id
+      traceId: http-correlation
+    observationTypes:
+      - payment-failure
+
+  - id: customer-service
+    displayName: Customer Service
+    environments:
+      - production
+      - staging
+    logGroups:
+      production: /ecs/customer-service/production
+      staging: /ecs/customer-service/staging
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      customerId: entity-id
+      traceId: http-correlation
+    observationTypes:
+      - data-discrepancy
+
+  - id: dispatch-service
+    displayName: Dispatch Service
+    environments:
+      - production
+      - staging
+    logGroups:
+      production: /ecs/dispatch-service/production
+      staging: /ecs/dispatch-service/staging
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      orderId: entity-id
+      messageId: kafka-message-id
+      traceId: http-correlation
+    observationTypes:
+      - incorrect-status
+      - notification-failure

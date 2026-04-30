@@ -1,0 +1,24 @@
+{
+  "scenarioId": "S007",
+  "observationType": "payment-failure",
+  "description": "Budget-exhausted scenario. Large scan window with many log entries forces budget exhaustion before investigation completes. Partial report must surface.",
+  "groundTruth": {
+    "likelyFailurePoint": "budget-exhausted-partial-report",
+    "rootCauseKeywords": [],
+    "minimumConfidence": "unknown",
+    "expectedStatus": "budget-exhausted"
+  },
+  "input": {
+    "serviceId": "payment-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-budget-test" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-23T00:00:00Z",
+      "to": "2026-04-30T00:00:00Z"
+    },
+    "observationDescription": "Stress test — budget exhaustion scenario"
+  },
+  "fixtures": {}
+}
