@@ -1,0 +1,25 @@
+{
+  "scenarioId": "S004",
+  "observationType": "data-discrepancy",
+  "description": "Customer profile for cust-88 shows incorrect email address. Logs show a data mutation event followed by a failed validation.",
+  "groundTruth": {
+    "likelyFailurePoint": "customer-service-profile-update",
+    "rootCauseKeywords": ["profile.update_failed", "validation.failed", "email"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "customer-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "customer", "value": "cust-88" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T08:00:00Z",
+      "to": "2026-04-30T09:00:00Z"
+    },
+    "observationDescription": "Customer profile shows incorrect email address for cust-88"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S004/cloudwatch-response.json"
+  }
+}

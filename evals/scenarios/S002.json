@@ -1,0 +1,28 @@
+{
+  "scenarioId": "S002",
+  "observationType": "incorrect-status",
+  "description": "Order ord-999 shows PENDING status despite being CONFIRMED. Traces cross order-service and dispatch-service via orderId and traceId. Root cause: status sync failure in dispatch-service due to database write timeout.",
+  "groundTruth": {
+    "likelyFailurePoint": "dispatch-status-sync",
+    "rootCauseKeywords": ["StatusSyncWorker", "database write timeout", "status_sync_failed"],
+    "minimumConfidence": "medium",
+    "servicesExpected": ["order-service", "dispatch-service"],
+    "crossServiceLinkingKey": "ord-999"
+  },
+  "input": {
+    "serviceId": "order-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-999" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:00:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "Order ord-999 shows incorrect PENDING status — expected CONFIRMED"
+  },
+  "fixtures": {
+    "cloudwatch-logs:order-service": "S002/order-service-logs.json",
+    "cloudwatch-logs:dispatch-service": "S002/dispatch-service-logs.json"
+  }
+}

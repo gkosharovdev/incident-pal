@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T10:45:00Z",
+      "message": {
+        "level": "ERROR",
+        "event": "charge.timeout",
+        "orderId": "ord-multi-555",
+        "paymentId": "pmt-multi-1",
+        "error": "ChargeFailed: gateway timeout after 30000ms"
+      },
+      "fields": { "@timestamp": "2026-04-30T10:45:00Z", "orderId": "ord-multi-555" },
+      "raw": "{\"level\":\"ERROR\",\"event\":\"charge.timeout\",\"orderId\":\"ord-multi-555\",\"paymentId\":\"pmt-multi-1\",\"error\":\"ChargeFailed: gateway timeout after 30000ms\"}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}

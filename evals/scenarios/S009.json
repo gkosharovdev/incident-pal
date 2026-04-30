@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S009",
+  "observationType": "data-discrepancy",
+  "description": "No-evidence scenario. Entity ord-not-found does not appear in any log or data source. Agent must report 'no evidence found' explicitly rather than hallucinating.",
+  "groundTruth": {
+    "likelyFailurePoint": null,
+    "rootCauseKeywords": [],
+    "minimumConfidence": "unknown",
+    "mustExplicitlyStateNoEvidence": true
+  },
+  "input": {
+    "serviceId": "order-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-does-not-exist-xyz" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:00:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "No evidence found scenario"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S009/cloudwatch-response.json"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T10:33:00Z",
+      "message": {
+        "level": "ERROR",
+        "event": "order.create_failed",
+        "traceId": "trace-deploy-abc",
+        "error": "NullPointerException: configuration key 'database.url' not found in environment",
+        "taskDefinition": "order-service:88"
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T10:33:00Z",
+        "traceId": "trace-deploy-abc"
+      },
+      "raw": "{\"level\":\"ERROR\",\"event\":\"order.create_failed\",\"traceId\":\"trace-deploy-abc\",\"error\":\"NullPointerException: configuration key 'database.url' not found in environment\",\"taskDefinition\":\"order-service:88\"}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}

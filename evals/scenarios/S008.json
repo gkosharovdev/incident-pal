@@ -1,0 +1,21 @@
+{
+  "scenarioId": "S008",
+  "observationType": "notification-failure",
+  "description": "Timed-out scenario. Investigation exceeds wall-clock limit. Partial report with timeout warning section must be returned.",
+  "groundTruth": {
+    "likelyFailurePoint": null,
+    "rootCauseKeywords": [],
+    "minimumConfidence": "unknown",
+    "expectedStatus": "timed-out",
+    "reportMustContain": "## ⚠️ Investigation Timed Out"
+  },
+  "input": {
+    "serviceId": "notification-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "customer", "value": "cust-timeout-test" }
+    ],
+    "observationDescription": "Timeout stress test scenario"
+  },
+  "fixtures": {}
+}

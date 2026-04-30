@@ -1,0 +1,17 @@
+{
+  "serviceName": "order-service",
+  "clusterName": "main-cluster",
+  "deploymentsInWindow": [
+    {
+      "deploymentId": "dep-20260430-1",
+      "status": "PRIMARY",
+      "taskDefinition": "order-service:88",
+      "createdAt": "2026-04-30T10:28:00Z",
+      "updatedAt": "2026-04-30T10:32:00Z",
+      "runningCount": 3,
+      "desiredCount": 3
+    }
+  ],
+  "currentRunningCount": 3,
+  "currentDesiredCount": 3
+}

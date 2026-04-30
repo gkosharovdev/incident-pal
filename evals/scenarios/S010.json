@@ -1,0 +1,27 @@
+{
+  "scenarioId": "S010",
+  "observationType": "payment-failure",
+  "description": "Multi-hypothesis scenario. Two plausible failure points: payment gateway timeout AND a recent ECS deployment. Agent must present both with confidence scores rather than arbitrarily selecting one.",
+  "groundTruth": {
+    "likelyFailurePoint": "payment-gateway-timeout-post-deployment",
+    "rootCauseKeywords": ["charge.timeout", "deployment", "taskDefinition"],
+    "minimumConfidence": "medium",
+    "expectedHypothesisCount": 2
+  },
+  "input": {
+    "serviceId": "payment-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-multi-555" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:00:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "Payment for ord-multi-555 failed — both gateway timeout and recent deployment occurred"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S010/cloudwatch-response.json",
+    "ecs-deployment": "S010/ecs-response.json"
+  }
+}

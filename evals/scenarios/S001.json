@@ -1,0 +1,25 @@
+{
+  "scenarioId": "S001",
+  "observationType": "notification-failure",
+  "description": "Customer cust-42 did not receive order confirmation notification. Investigation should identify outbox dispatch failure due to SMTP relay connection refused.",
+  "groundTruth": {
+    "likelyFailurePoint": "outbox-dispatch",
+    "rootCauseKeywords": ["OutboxWorker", "smtp-relay", "connection refused", "dispatch_failed"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "notification-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "customer", "value": "cust-42" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T10:00:00Z",
+      "to": "2026-04-30T11:00:00Z"
+    },
+    "observationDescription": "Customer cust-42 did not receive order confirmation notification email"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S001/cloudwatch-response.json"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T10:20:00Z",
+      "message": {
+        "level": "INFO",
+        "event": "order.status_update",
+        "orderId": "ord-999",
+        "traceId": "trace-abc-001",
+        "fromStatus": "PENDING",
+        "toStatus": "CONFIRMED"
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T10:20:00Z",
+        "orderId": "ord-999",
+        "traceId": "trace-abc-001"
+      },
+      "raw": "{\"level\":\"INFO\",\"event\":\"order.status_update\",\"orderId\":\"ord-999\",\"traceId\":\"trace-abc-001\",\"fromStatus\":\"PENDING\",\"toStatus\":\"CONFIRMED\"}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}

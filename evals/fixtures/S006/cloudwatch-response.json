@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-30T07:22:00Z",
+      "message": {
+        "level": "ERROR",
+        "event": "consumer.ack_failed",
+        "messageId": "msg-kafka-55",
+        "orderId": "ord-dispatch-9",
+        "error": "AcknowledgementTimeout: downstream status-service did not respond within 5000ms",
+        "partition": 2,
+        "offset": 44301
+      },
+      "fields": {
+        "@timestamp": "2026-04-30T07:22:00Z",
+        "messageId": "msg-kafka-55",
+        "orderId": "ord-dispatch-9"
+      },
+      "raw": "{\"level\":\"ERROR\",\"event\":\"consumer.ack_failed\",\"messageId\":\"msg-kafka-55\",\"orderId\":\"ord-dispatch-9\",\"error\":\"AcknowledgementTimeout: downstream status-service did not respond within 5000ms\",\"partition\":2,\"offset\":44301}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}
