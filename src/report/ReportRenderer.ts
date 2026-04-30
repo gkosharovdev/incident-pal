@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import type {
   Investigation,
   Report,
@@ -6,6 +5,7 @@ import type {
   ReportMetadata,
   Hypothesis,
 } from "../models/Investigation.js";
+import type { LinkingKey } from "../models/LinkingKey.js";
 
 const CONFIDENCE_EMOJI: Record<string, string> = {
   high: "🟢",
@@ -21,9 +21,6 @@ export class ReportRenderer {
     metadata: ReportMetadata,
   ): Report {
     const { request, status, hypotheses, id } = investigation;
-    const defaultWindowApplied = !investigation.request.timeWindow ||
-      investigation.request === request;
-
     const likelyFailurePoint = this.selectLikelyFailurePoint(hypotheses);
 
     const markdownContent = this.renderMarkdown({
@@ -75,21 +72,17 @@ export class ReportRenderer {
     metadata: ReportMetadata,
   ): string[] {
     const actions: string[] = [];
-
     if (metadata.dataSourcesUnavailable.length > 0) {
       actions.push(
         `Investigate why these data sources were unavailable: ${metadata.dataSourcesUnavailable.join(", ")}`,
       );
     }
-
     if (metadata.resultsTruncated) {
       actions.push("Results were truncated — consider narrowing the time window for a follow-up query");
     }
-
     if (hypotheses.length === 0 || hypotheses.every((h) => h.confidence === "unknown")) {
       actions.push("No conclusive evidence found — widen the time window or check additional data sources");
     }
-
     return actions;
   }
 
@@ -102,44 +95,55 @@ export class ReportRenderer {
   }): string {
     const { investigation, evidenceBySource, metadata, likelyFailurePoint, status } = opts;
     const { request } = investigation;
-    const lines: string[] = [];
+    return [
+      ...this.renderTimeoutWarning(status),
+      "# Investigation Report", "",
+      "## Summary", "",
+      ...this.renderSummaryLines(request),
+      "",
+      ...this.renderEvidenceLines(evidenceBySource, metadata),
+      ...this.renderHypothesesLines(investigation.hypotheses, metadata),
+      ...this.renderFailurePointLines(likelyFailurePoint),
+      ...this.renderActionsLines(investigation.hypotheses, metadata),
+      ...this.renderMetadataLines(metadata),
+    ].join("\n");
+  }
 
-    if (status === "timed-out") {
-      lines.push("## ⚠️ Investigation Timed Out");
-      lines.push("");
-      lines.push(
-        "The investigation reached the configured wall-clock limit. The findings below are partial.",
-      );
-      lines.push("");
-    }
+  private renderTimeoutWarning(status: string): string[] {
+    if (status !== "timed-out") return [];
+    return [
+      "## ⚠️ Investigation Timed Out",
+      "",
+      "The investigation reached the configured wall-clock limit. The findings below are partial.",
+      "",
+    ];
+  }
 
-    lines.push("# Investigation Report");
-    lines.push("");
-    lines.push("## Summary");
-    lines.push("");
-    lines.push(`| Field | Value |`);
-    lines.push(`|-------|-------|`);
-    lines.push(`| **Service** | \`${request.serviceId}\` |`);
-    lines.push(`| **Environment** | ${request.environment} |`);
-    lines.push(
+  private renderSummaryLines(
+    request: Investigation["request"],
+  ): string[] {
+    const lines: string[] = [
+      `| Field | Value |`,
+      `|-------|-------|`,
+      `| **Service** | \`${request.serviceId}\` |`,
+      `| **Environment** | ${request.environment} |`,
       `| **Linking Keys** | ${request.linkingKeys.map((k) => this.formatLinkingKey(k)).join(", ")} |`,
-    );
-    lines.push(
       `| **Time Window** | ${request.timeWindow?.from ?? "N/A"} → ${request.timeWindow?.to ?? "N/A"} |`,
-    );
-
+    ];
     if (!request.timeWindow) {
       lines.push(`| **Default Window Applied** | Yes — past 60 minutes |`);
     }
-
     if (request.observationDescription) {
       lines.push(`| **Observation** | ${request.observationDescription} |`);
     }
+    return lines;
+  }
 
-    lines.push("");
-    lines.push("## Evidence");
-    lines.push("");
-
+  private renderEvidenceLines(
+    evidenceBySource: Record<string, EvidenceItem[]>,
+    metadata: ReportMetadata,
+  ): string[] {
+    const lines: string[] = ["## Evidence", ""];
     const totalEvidence = Object.values(evidenceBySource).flat();
     if (totalEvidence.length === 0) {
       lines.push("No evidence found matching the provided linking keys in any data source.");
@@ -151,48 +155,47 @@ export class ReportRenderer {
     } else {
       for (const [source, items] of Object.entries(evidenceBySource)) {
         if (items.length === 0) continue;
-        lines.push(`### ${source}`);
-        lines.push("");
+        lines.push(`### ${source}`, "");
         for (const item of items) {
           lines.push(`- **${item.timestamp}**: ${item.description}`);
         }
         lines.push("");
       }
     }
+    return lines;
+  }
 
-    lines.push("## Hypotheses");
-    lines.push("");
-
-    if (investigation.hypotheses.length === 0) {
-      lines.push(
-        "No hypotheses formed — insufficient evidence to identify a likely failure point.",
-      );
+  private renderHypothesesLines(hypotheses: Hypothesis[], metadata: ReportMetadata): string[] {
+    const lines: string[] = ["## Hypotheses", ""];
+    if (hypotheses.length === 0) {
+      lines.push("No hypotheses formed — insufficient evidence to identify a likely failure point.");
       metadata.uncertaintyFlags.push("No hypotheses formed");
     } else {
-      for (const h of investigation.hypotheses) {
+      for (const h of hypotheses) {
         const emoji = CONFIDENCE_EMOJI[h.confidence] ?? "⚪";
-        lines.push(`### ${emoji} ${h.description}`);
-        lines.push("");
-        lines.push(`**Confidence**: ${h.confidence}`);
-        lines.push("");
+        lines.push(`### ${emoji} ${h.description}`, "", `**Confidence**: ${h.confidence}`, "");
       }
     }
+    return lines;
+  }
 
-    lines.push("## Likely Failure Point");
-    lines.push("");
+  private renderFailurePointLines(likelyFailurePoint: Hypothesis | null): string[] {
+    const lines: string[] = ["## Likely Failure Point", ""];
     if (likelyFailurePoint) {
       const emoji = CONFIDENCE_EMOJI[likelyFailurePoint.confidence] ?? "⚪";
-      lines.push(`${emoji} **${likelyFailurePoint.description}**`);
-      lines.push(`*(Confidence: ${likelyFailurePoint.confidence})*`);
+      lines.push(
+        `${emoji} **${likelyFailurePoint.description}**`,
+        `*(Confidence: ${likelyFailurePoint.confidence})*`,
+      );
     } else {
       lines.push("Inconclusive — insufficient evidence to identify a single failure point.");
     }
+    return lines;
+  }
 
-    lines.push("");
-    lines.push("## Recommended Next Actions");
-    lines.push("");
-
-    const actions = this.extractRecommendedActions(investigation.hypotheses, metadata);
+  private renderActionsLines(hypotheses: Hypothesis[], metadata: ReportMetadata): string[] {
+    const lines: string[] = ["", "## Recommended Next Actions", ""];
+    const actions = this.extractRecommendedActions(hypotheses, metadata);
     if (actions.length === 0) {
       lines.push("No specific actions recommended based on available evidence.");
     } else {
@@ -200,36 +203,36 @@ export class ReportRenderer {
         lines.push(`1. ${action}`);
       }
     }
+    return lines;
+  }
 
-    lines.push("");
-    lines.push("## Investigation Metadata");
-    lines.push("");
-    lines.push(`- **Tool calls made**: ${metadata.toolCallsCount}`);
-    lines.push(`- **Data sources queried**: ${metadata.dataSourcesQueried.join(", ") || "none"}`);
-
+  private renderMetadataLines(metadata: ReportMetadata): string[] {
+    const lines: string[] = [
+      "",
+      "## Investigation Metadata",
+      "",
+      `- **Tool calls made**: ${metadata.toolCallsCount}`,
+      `- **Data sources queried**: ${metadata.dataSourcesQueried.join(", ") || "none"}`,
+    ];
     if (metadata.dataSourcesUnavailable.length > 0) {
       lines.push(`- **Data sources unavailable**: ${metadata.dataSourcesUnavailable.join(", ")}`);
     }
-
     lines.push(
       `- **Scan budget used**: ${this.formatBytes(metadata.scanBytesUsed)} / ${this.formatBytes(metadata.scanBudgetBytes)}`,
     );
-
     if (metadata.resultsTruncated) {
       lines.push("- ⚠️ Some query results were truncated — results may be incomplete");
     }
-
     if (metadata.uncertaintyFlags.length > 0) {
       lines.push("- **Uncertainty flags**:");
       for (const flag of metadata.uncertaintyFlags) {
         lines.push(`  - ${flag}`);
       }
     }
-
-    return lines.join("\n");
+    return lines;
   }
 
-  private formatLinkingKey(key: import("../models/LinkingKey.js").LinkingKey): string {
+  private formatLinkingKey(key: LinkingKey): string {
     if (key.type === "entity-id") return `\`${key.entityType}:${key.value}\``;
     if (key.type === "http-correlation") return `HTTP \`${key.value}\``;
     return `Kafka \`${key.value}\``;
@@ -243,6 +246,3 @@ export class ReportRenderer {
     return `${value.toFixed(1)} ${units[exp] ?? "B"}`;
   }
 }
-
-// Suppress unused import warning — uuidv4 used in report generation
-void uuidv4;

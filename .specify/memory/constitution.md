@@ -8,12 +8,13 @@ All production interactions are read-only. The system MUST NOT write, modify, de
 
 ### II. Tests & Evals Always Green (NON-NEGOTIABLE)
 
-Every merge to the main branch MUST leave all tests and evals passing. No PR is merged with a failing test or a failing eval assertion. This applies to:
+Every merge to the main branch MUST leave all tests, evals, and linting passing. No PR is merged with a failing test, a failing eval assertion, or any lint error. This applies to:
 - Unit tests
 - Integration tests
 - Agent evals (golden-set trace assertions, output structure checks, confidence calibration checks)
+- ESLint with `--max-warnings 0` (zero warnings permitted)
 
-If an eval degrades (e.g., root-cause accuracy drops below the SC-001 threshold of 80%), the merge is blocked until the regression is resolved. Disabling or skipping a test/eval to make CI green is prohibited — fix the underlying issue instead.
+If an eval degrades (e.g., root-cause accuracy drops below the SC-001 threshold of 80%), the merge is blocked until the regression is resolved. Disabling or skipping a test/eval, suppressing a lint rule with `eslint-disable`, or lowering rule thresholds to make CI green is prohibited — fix the underlying issue instead.
 
 ### III. Clean Code & SOLID Principles (NON-NEGOTIABLE)
 
@@ -61,6 +62,7 @@ Gates are split by execution cost. PR gates run on every pull request; merge gat
 | All integration tests pass | 100% | Yes |
 | All structural eval assertions pass (Tier 1) | 100% | Yes |
 | TypeScript strict mode — no type errors | 0 errors | Yes |
+| ESLint — zero errors and zero warnings | 0 issues | Yes |
 | Cyclomatic complexity | ≤ 10 per function | Yes |
 | No production write paths | 0 violations | Yes |
 | New tool has unit + integration test | Required | Yes |
@@ -83,4 +85,4 @@ This constitution supersedes all other project practices. Amendments require:
 
 All PRs must verify compliance with this constitution before merge. Complexity or exceptions must be documented in the plan's Complexity Tracking table.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-30 | **Last Amended**: 2026-04-30
+**Version**: 1.1.0 | **Ratified**: 2026-04-30 | **Last Amended**: 2026-04-30

@@ -3,6 +3,7 @@ import {
   StartQueryCommand,
   GetQueryResultsCommand,
   DescribeLogGroupsCommand,
+  type ResultField,
 } from "@aws-sdk/client-cloudwatch-logs";
 import type { Tool, ToolResult } from "../../models/Tool.js";
 import type { JSONSchema7 } from "../../models/JSONSchema.js";
@@ -123,78 +124,59 @@ export class CloudWatchLogsTool implements Tool {
       };
     }
 
+    return this.pollQuery(queryId, limit, scannedBytesEstimate);
+  }
+
+  private async pollQuery(
+    queryId: string,
+    limit: number,
+    scannedBytesEstimate: number,
+  ): Promise<ToolResult> {
     for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
       await sleep(this.pollIntervalMs);
       try {
-        const pollResponse = await this.client.send(
-          new GetQueryResultsCommand({ queryId }),
-        );
+        const pollResponse = await this.client.send(new GetQueryResultsCommand({ queryId }));
         const status = pollResponse.status;
         if (status === "Running" || status === "Scheduled") continue;
-
         if (status !== "Complete") {
-          return {
-            success: false,
-            data: null,
-            error: `CloudWatch query ended with status: ${status ?? "unknown"}`,
-          };
+          return { success: false, data: null, error: `CloudWatch query ended with status: ${status ?? "unknown"}` };
         }
-
         const rawResults = pollResponse.results ?? [];
-        const entries: LogEntry[] = [];
-        let unparsedCount = 0;
-
-        for (const row of rawResults) {
-          const fields: Record<string, string> = {};
-          let timestamp = "";
-          let rawMessage = "";
-
-          for (const field of row ?? []) {
-            if (field.field && field.value !== undefined) {
-              fields[field.field] = field.value ?? "";
-              if (field.field === "@timestamp") timestamp = field.value ?? "";
-              if (field.field === "@message") rawMessage = field.value ?? "";
-            }
-          }
-
-          let message: unknown = rawMessage;
-          try {
-            message = JSON.parse(rawMessage);
-          } catch {
-            unparsedCount++;
-          }
-
-          entries.push({ timestamp, message, fields, raw: rawMessage });
-        }
-
+        const { entries, unparsedCount } = this.parseResultRows(rawResults);
         const truncated = rawResults.length >= limit;
-        const result: CloudWatchResult = {
-          entries,
-          truncated,
-          scannedBytesEstimate,
-          unparsedCount,
-        };
-
-        return {
-          success: true,
-          data: result,
-          error: null,
-          scanBytesUsed: scannedBytesEstimate,
-          truncated,
-        };
+        const result: CloudWatchResult = { entries, truncated, scannedBytesEstimate, unparsedCount };
+        return { success: true, data: result, error: null, scanBytesUsed: scannedBytesEstimate, truncated };
       } catch (err) {
-        return {
-          success: false,
-          data: null,
-          error: `GetQueryResults failed: ${String(err)}`,
-        };
+        return { success: false, data: null, error: `GetQueryResults failed: ${String(err)}` };
       }
     }
+    return { success: false, data: null, error: "CloudWatch query timed out after polling limit exceeded" };
+  }
 
-    return {
-      success: false,
-      data: null,
-      error: "CloudWatch query timed out after polling limit exceeded",
-    };
+  private parseResultRows(
+    rawResults: ResultField[][],
+  ): { entries: LogEntry[]; unparsedCount: number } {
+    const entries: LogEntry[] = [];
+    let unparsedCount = 0;
+    for (const row of rawResults) {
+      const fields: Record<string, string> = {};
+      let timestamp = "";
+      let rawMessage = "";
+      for (const field of row) {
+        if (field.field && field.value !== undefined) {
+          fields[field.field] = field.value;
+          if (field.field === "@timestamp") timestamp = field.value;
+          if (field.field === "@message") rawMessage = field.value;
+        }
+      }
+      let message: unknown = rawMessage;
+      try {
+        message = JSON.parse(rawMessage) as unknown;
+      } catch {
+        unparsedCount++;
+      }
+      entries.push({ timestamp, message, fields, raw: rawMessage });
+    }
+    return { entries, unparsedCount };
   }
 }

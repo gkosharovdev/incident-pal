@@ -70,33 +70,33 @@ export class ServiceCatalogTool implements Tool {
     this.catalog = yaml.load(raw) as ServiceCatalog;
   }
 
-  async invoke(input: unknown): Promise<ToolResult> {
+  invoke(input: unknown): Promise<ToolResult> {
     const parsed = input as { serviceId: string; environment: string };
     const service = this.catalog.services.find((s) => s.id === parsed.serviceId);
 
     if (!service) {
-      return {
+      return Promise.resolve({
         success: false,
         data: null,
         error: `UNKNOWN_SERVICE: Service '${parsed.serviceId}' not found in catalog`,
-      };
+      });
     }
 
     if (!service.environments.includes(parsed.environment)) {
-      return {
+      return Promise.resolve({
         success: false,
         data: null,
         error: `Unknown environment '${parsed.environment}' for service '${parsed.serviceId}'`,
-      };
+      });
     }
 
     const logGroup = service.logGroups[parsed.environment];
     if (!logGroup) {
-      return {
+      return Promise.resolve({
         success: false,
         data: null,
         error: `No log group configured for '${parsed.serviceId}' in '${parsed.environment}'`,
-      };
+      });
     }
 
     const result: ServiceLookupResult = {
@@ -108,7 +108,7 @@ export class ServiceCatalogTool implements Tool {
       linkingKeySchema: parseLinkingKeySchema(service.linkingKeySchema),
     };
 
-    return { success: true, data: result, error: null };
+    return Promise.resolve({ success: true, data: result, error: null });
   }
 
   resolve(serviceId: string, environment: string): ServiceLookupResult | null {

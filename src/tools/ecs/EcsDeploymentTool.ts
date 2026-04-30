@@ -1,4 +1,4 @@
-import { ECSClient, DescribeServicesCommand, ListServicesCommand } from "@aws-sdk/client-ecs";
+import { ECSClient, DescribeServicesCommand } from "@aws-sdk/client-ecs";
 import type { Tool, ToolResult } from "../../models/Tool.js";
 import type { JSONSchema7 } from "../../models/JSONSchema.js";
 

@@ -6,7 +6,6 @@ import type {
   TraceEntry,
   Hypothesis,
   EvidenceItem,
-  Report,
   ReportMetadata,
 } from "../models/Investigation.js";
 import { LinkingKeySet } from "../models/LinkingKey.js";
@@ -18,6 +17,7 @@ import { SYSTEM_PROMPT, buildInvestigationContext } from "./prompts.js";
 import { ReportRenderer } from "../report/ReportRenderer.js";
 import { LinkingKeyExtractor } from "./LinkingKeyExtractor.js";
 import type { LinkingKeySchema } from "./LinkingKeyExtractor.js";
+import type { Tool, ToolResult } from "../models/Tool.js";
 
 const DEFAULT_MAX_ITERATIONS = 20;
 const DEFAULT_SCAN_BUDGET_BYTES = 1_073_741_824;
@@ -25,9 +25,23 @@ const DEFAULT_MAX_DURATION_MS = 10 * 60 * 1000;
 const DEFAULT_TIME_WINDOW_MS = 60 * 60 * 1000;
 
 export interface InvestigationAgentConfig {
-  tools: import("../models/Tool.js").Tool[];
+  tools: Tool[];
   anthropicClient?: Anthropic;
   maxDurationMs?: number | undefined;
+}
+
+interface SessionState {
+  readonly investigationId: string;
+  readonly trace: Trace;
+  readonly activeLinkingKeys: LinkingKeySet;
+  readonly budget: ScanBudget;
+  readonly timer: InvestigationTimer;
+  readonly hypotheses: Hypothesis[];
+  readonly evidenceBySource: Record<string, EvidenceItem[]>;
+  readonly dataSourcesUnavailable: string[];
+  readonly uncertaintyFlags: string[];
+  resultsTruncated: boolean;
+  timedOut: boolean;
 }
 
 export class InvestigationAgent {
@@ -49,42 +63,25 @@ export class InvestigationAgent {
   }
 
   async investigate(request: InvestigationRequest): Promise<Investigation> {
-    const investigationId = uuidv4();
-    const trace = new Trace(investigationId);
-    const activeLinkingKeys = new LinkingKeySet();
-
-    for (const key of request.linkingKeys) {
-      activeLinkingKeys.add(key);
-    }
-
     const resolvedRequest = this.applyDefaultTimeWindow(request);
     const maxIterations = resolvedRequest.options?.maxIterations ?? DEFAULT_MAX_ITERATIONS;
-    const scanBudgetBytes = resolvedRequest.options?.scanBudgetBytes ?? DEFAULT_SCAN_BUDGET_BYTES;
-    const budget = new ScanBudget(scanBudgetBytes);
-    const timer = new InvestigationTimer(this.maxDurationMs);
-    const hypotheses: Hypothesis[] = [];
-    const evidenceBySource: Record<string, EvidenceItem[]> = {};
-    const dataSourcesUnavailable: string[] = [];
-    const uncertaintyFlags: string[] = [];
-    let resultsTruncated = false;
+    const budget = new ScanBudget(resolvedRequest.options?.scanBudgetBytes ?? DEFAULT_SCAN_BUDGET_BYTES);
+    const state = this.createSessionState(budget, resolvedRequest.linkingKeys);
 
-    trace.appendEntry(this.makeBookendEntry(investigationId, "investigation-started"));
+    state.trace.appendEntry(this.makeBookendEntry(state.investigationId, "investigation-started"));
 
     const messages: Anthropic.MessageParam[] = [
       { role: "user", content: buildInvestigationContext(resolvedRequest) },
     ];
-
     const toolDefinitions = this.registry.getToolDefinitions() as Anthropic.Tool[];
     let iterationCount = 0;
-    let timedOut = false;
 
-    while (iterationCount < maxIterations) {
-      if (timer.isExpired()) {
-        timedOut = true;
-        trace.appendEntry(this.makeTimedOutEntry(investigationId));
+    while (iterationCount < maxIterations && !state.timedOut) {
+      if (state.timer.isExpired()) {
+        state.timedOut = true;
+        state.trace.appendEntry(this.makeTimedOutEntry());
         break;
       }
-
       iterationCount++;
 
       const response = await this.anthropic.messages.create({
@@ -94,181 +91,237 @@ export class InvestigationAgent {
         tools: toolDefinitions,
         messages,
       });
-
       messages.push({ role: "assistant", content: response.content });
 
-      if (response.stop_reason === "end_turn") {
-        break;
-      }
-
-      if (response.stop_reason !== "tool_use") {
-        break;
-      }
+      if (response.stop_reason !== "tool_use") break;
 
       const toolUseBlocks = response.content.filter(
         (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
       );
-
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
-
-      for (const toolUse of toolUseBlocks) {
-        if (timer.isExpired()) {
-          timedOut = true;
-          trace.appendEntry(this.makeTimedOutEntry(investigationId));
-          break;
-        }
-
-        const tool = this.registry.lookup(toolUse.name);
-        const callStart = Date.now();
-
-        if (!tool) {
-          const entry = this.makeTraceEntry(investigationId, {
-            type: "tool-unavailable",
-            toolName: toolUse.name,
-            input: toolUse.input,
-            output: null,
-            error: `Tool '${toolUse.name}' is not registered`,
-            durationMs: 0,
-          });
-          trace.appendEntry(entry);
-          dataSourcesUnavailable.push(toolUse.name);
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: toolUse.id,
-            content: JSON.stringify({ error: `Tool '${toolUse.name}' not found` }),
-            is_error: true,
-          });
-          continue;
-        }
-
-        if (toolUse.name !== "produce-report") {
-          const inputWithBudget = toolUse.input as Record<string, unknown>;
-          const estimated = budget.remaining;
-          if (!budget.canAfford(estimated > 0 ? 1 : 0) && budget.isExhausted) {
-            const entry = this.makeTraceEntry(investigationId, {
-              type: "budget-exhausted",
-              toolName: toolUse.name,
-              input: toolUse.input,
-              output: null,
-              error: "Scan budget exhausted",
-              durationMs: 0,
-            });
-            trace.appendEntry(entry);
-            toolResults.push({
-              type: "tool_result",
-              tool_use_id: toolUse.id,
-              content: JSON.stringify({ error: "Scan budget exhausted" }),
-              is_error: true,
-            });
-            continue;
-          }
-          void inputWithBudget;
-        }
-
-        let result;
-        try {
-          result = await tool.invoke(toolUse.input);
-        } catch (err) {
-          const entry = this.makeTraceEntry(investigationId, {
-            type: "tool-error",
-            toolName: toolUse.name,
-            input: toolUse.input,
-            output: null,
-            error: String(err),
-            durationMs: Date.now() - callStart,
-          });
-          trace.appendEntry(entry);
-          dataSourcesUnavailable.push(toolUse.name);
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: toolUse.id,
-            content: JSON.stringify({ error: String(err) }),
-            is_error: true,
-          });
-          continue;
-        }
-
-        const durationMs = Date.now() - callStart;
-
-        if (result.scanBytesUsed) {
-          budget.record(result.scanBytesUsed);
-        }
-        if (result.truncated) {
-          resultsTruncated = true;
-          const entry = this.makeTraceEntry(investigationId, {
-            type: "result-truncated",
-            toolName: toolUse.name,
-            input: toolUse.input,
-            output: null,
-            error: null,
-            durationMs: 0,
-          });
-          trace.appendEntry(entry);
-        }
-
-        const entryType = result.success ? "tool-call" : "tool-error";
-        const entry = this.makeTraceEntry(investigationId, {
-          type: entryType,
-          toolName: toolUse.name,
-          input: toolUse.input,
-          output: result.data,
-          error: result.error,
-          durationMs,
-          scanBytesUsed: result.scanBytesUsed ?? null,
-        });
-        trace.appendEntry(entry);
-
-        if (!result.success) {
-          dataSourcesUnavailable.push(toolUse.name);
-          uncertaintyFlags.push(`Tool ${toolUse.name} returned an error: ${result.error ?? ""}`);
-        }
-
-        toolResults.push({
-          type: "tool_result",
-          tool_use_id: toolUse.id,
-          content: JSON.stringify(result.data ?? { error: result.error }),
-          is_error: !result.success,
-        });
-
-        if (toolUse.name === "produce-report") {
-          const reportData = toolUse.input as Record<string, unknown>;
-          hypotheses.push(...this.extractHypotheses(reportData));
-          const evidence = this.extractEvidence(reportData);
-          for (const [source, items] of Object.entries(evidence)) {
-            evidenceBySource[source] = [...(evidenceBySource[source] ?? []), ...items];
-          }
-        }
-
-        if (toolUse.name === "cloudwatch-logs" && result.success && result.data) {
-          const cwData = result.data as { entries?: unknown[] };
-          const entries = cwData.entries ?? [];
-          const input = toolUse.input as Record<string, unknown>;
-          const schema = this.resolveSchemaForLogGroup(String(input["logGroup"] ?? ""));
-          const discoveredKeys = this.extractor.extractFromEntries(entries, schema, "entity");
-          for (const key of discoveredKeys) {
-            const isNew = activeLinkingKeys.add(key);
-            if (isNew) {
-              trace.appendEntry(
-                this.makeTraceEntry(investigationId, {
-                  type: "linking-key-discovered",
-                  toolName: null,
-                  input: { discoveredFrom: toolUse.name },
-                  output: key,
-                  error: null,
-                  durationMs: 0,
-                }),
-              );
-            }
-          }
-        }
-      }
-
-      if (timedOut) break;
-
+      const toolResults = await this.processToolUseBlocks(toolUseBlocks, state);
       if (toolResults.length > 0) {
         messages.push({ role: "user", content: toolResults });
       }
     }
+
+    return this.buildInvestigation(resolvedRequest, state);
+  }
+
+  private createSessionState(
+    budget: ScanBudget,
+    initialLinkingKeys: import("../models/LinkingKey.js").LinkingKey[],
+  ): SessionState {
+    const investigationId = uuidv4();
+    const activeLinkingKeys = new LinkingKeySet();
+    for (const key of initialLinkingKeys) {
+      activeLinkingKeys.add(key);
+    }
+    return {
+      investigationId,
+      trace: new Trace(investigationId),
+      activeLinkingKeys,
+      budget,
+      timer: new InvestigationTimer(this.maxDurationMs),
+      hypotheses: [],
+      evidenceBySource: {},
+      dataSourcesUnavailable: [],
+      uncertaintyFlags: [],
+      resultsTruncated: false,
+      timedOut: false,
+    };
+  }
+
+  private async processToolUseBlocks(
+    blocks: Anthropic.ToolUseBlock[],
+    state: SessionState,
+  ): Promise<Anthropic.ToolResultBlockParam[]> {
+    const results: Anthropic.ToolResultBlockParam[] = [];
+    for (const toolUse of blocks) {
+      if (state.timedOut) break;
+      results.push(await this.processSingleToolUse(toolUse, state));
+    }
+    return results;
+  }
+
+  private async processSingleToolUse(
+    toolUse: Anthropic.ToolUseBlock,
+    state: SessionState,
+  ): Promise<Anthropic.ToolResultBlockParam> {
+    if (state.timer.isExpired()) {
+      state.timedOut = true;
+      state.trace.appendEntry(this.makeTimedOutEntry());
+      return { type: "tool_result", tool_use_id: toolUse.id, content: JSON.stringify({ error: "timeout" }), is_error: true };
+    }
+    const tool = this.registry.lookup(toolUse.name);
+    if (!tool) return this.handleToolNotFound(toolUse, state);
+    if (toolUse.name !== "produce-report" && state.budget.isExhausted) {
+      return this.handleBudgetExhausted(toolUse, state);
+    }
+    return this.invokeAndRecordTool(tool, toolUse, state);
+  }
+
+  private handleToolNotFound(
+    toolUse: Anthropic.ToolUseBlock,
+    state: SessionState,
+  ): Anthropic.ToolResultBlockParam {
+    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+      type: "tool-unavailable",
+      toolName: toolUse.name,
+      input: toolUse.input,
+      output: null,
+      error: `Tool '${toolUse.name}' is not registered`,
+      durationMs: 0,
+    }));
+    state.dataSourcesUnavailable.push(toolUse.name);
+    return {
+      type: "tool_result",
+      tool_use_id: toolUse.id,
+      content: JSON.stringify({ error: `Tool '${toolUse.name}' not found` }),
+      is_error: true,
+    };
+  }
+
+  private handleBudgetExhausted(
+    toolUse: Anthropic.ToolUseBlock,
+    state: SessionState,
+  ): Anthropic.ToolResultBlockParam {
+    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+      type: "budget-exhausted",
+      toolName: toolUse.name,
+      input: toolUse.input,
+      output: null,
+      error: "Scan budget exhausted",
+      durationMs: 0,
+    }));
+    return {
+      type: "tool_result",
+      tool_use_id: toolUse.id,
+      content: JSON.stringify({ error: "Scan budget exhausted" }),
+      is_error: true,
+    };
+  }
+
+  private async invokeAndRecordTool(
+    tool: Tool,
+    toolUse: Anthropic.ToolUseBlock,
+    state: SessionState,
+  ): Promise<Anthropic.ToolResultBlockParam> {
+    const callStart = Date.now();
+    let result: ToolResult;
+    try {
+      result = await tool.invoke(toolUse.input);
+    } catch (err) {
+      state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+        type: "tool-error",
+        toolName: toolUse.name,
+        input: toolUse.input,
+        output: null,
+        error: String(err),
+        durationMs: Date.now() - callStart,
+      }));
+      state.dataSourcesUnavailable.push(toolUse.name);
+      return {
+        type: "tool_result",
+        tool_use_id: toolUse.id,
+        content: JSON.stringify({ error: String(err) }),
+        is_error: true,
+      };
+    }
+    const durationMs = Date.now() - callStart;
+    this.recordToolResult(toolUse, result, durationMs, state);
+    this.postProcessToolResult(toolUse, result, state);
+    return {
+      type: "tool_result",
+      tool_use_id: toolUse.id,
+      content: JSON.stringify(result.data ?? { error: result.error }),
+      is_error: !result.success,
+    };
+  }
+
+  private recordToolResult(
+    toolUse: Anthropic.ToolUseBlock,
+    result: ToolResult,
+    durationMs: number,
+    state: SessionState,
+  ): void {
+    if (result.scanBytesUsed) state.budget.record(result.scanBytesUsed);
+    if (result.truncated) {
+      state.resultsTruncated = true;
+      state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+        type: "result-truncated",
+        toolName: toolUse.name,
+        input: toolUse.input,
+        output: null,
+        error: null,
+        durationMs: 0,
+      }));
+    }
+    const entryType = result.success ? "tool-call" : "tool-error";
+    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+      type: entryType,
+      toolName: toolUse.name,
+      input: toolUse.input,
+      output: result.data,
+      error: result.error,
+      durationMs,
+      scanBytesUsed: result.scanBytesUsed ?? null,
+    }));
+    if (!result.success) {
+      state.dataSourcesUnavailable.push(toolUse.name);
+      state.uncertaintyFlags.push(`Tool ${toolUse.name} returned an error: ${result.error ?? ""}`);
+    }
+  }
+
+  private postProcessToolResult(
+    toolUse: Anthropic.ToolUseBlock,
+    result: ToolResult,
+    state: SessionState,
+  ): void {
+    if (toolUse.name === "produce-report") {
+      const reportData = toolUse.input as Record<string, unknown>;
+      state.hypotheses.push(...this.extractHypotheses(reportData));
+      const evidence = this.extractEvidence(reportData);
+      for (const [source, items] of Object.entries(evidence)) {
+        state.evidenceBySource[source] = [...(state.evidenceBySource[source] ?? []), ...items];
+      }
+    }
+    if (toolUse.name === "cloudwatch-logs" && result.success && result.data) {
+      this.discoverLinkingKeys(toolUse, result.data, state);
+    }
+  }
+
+  private discoverLinkingKeys(
+    toolUse: Anthropic.ToolUseBlock,
+    data: unknown,
+    state: SessionState,
+  ): void {
+    const cwData = data as { entries?: unknown[] };
+    const entries = cwData.entries ?? [];
+    const input = toolUse.input as Record<string, unknown>;
+    const logGroup = input["logGroup"];
+    const schema = this.resolveSchemaForLogGroup(typeof logGroup === "string" ? logGroup : "");
+    const discoveredKeys = this.extractor.extractFromEntries(entries, schema, "entity");
+    for (const key of discoveredKeys) {
+      const isNew = state.activeLinkingKeys.add(key);
+      if (isNew) {
+        state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+          type: "linking-key-discovered",
+          toolName: null,
+          input: { discoveredFrom: toolUse.name },
+          output: key,
+          error: null,
+          durationMs: 0,
+        }));
+      }
+    }
+  }
+
+  private buildInvestigation(
+    resolvedRequest: InvestigationRequest,
+    state: SessionState,
+  ): Investigation {
+    const { investigationId, trace, activeLinkingKeys, hypotheses, evidenceBySource,
+      dataSourcesUnavailable, uncertaintyFlags, resultsTruncated, timedOut, budget } = state;
 
     const status = timedOut
       ? ("timed-out" as const)
@@ -277,17 +330,12 @@ export class InvestigationAgent {
         : ("complete" as const);
 
     const metadata: ReportMetadata = {
-      toolCallsCount: trace
-        .getEntries()
-        .filter((e) => e.type === "tool-call").length,
-      dataSourcesQueried: [
-        ...new Set(
-          trace
-            .getEntries()
-            .filter((e) => e.type === "tool-call" && e.toolName)
-            .map((e) => e.toolName as string),
-        ),
-      ],
+      toolCallsCount: trace.getEntries().filter((e) => e.type === "tool-call").length,
+      dataSourcesQueried: [...new Set(
+        trace.getEntries()
+          .filter((e) => e.type === "tool-call" && e.toolName)
+          .map((e) => e.toolName as string),
+      )],
       dataSourcesUnavailable: [...new Set(dataSourcesUnavailable)],
       scanBytesUsed: budget.used,
       scanBudgetBytes: budget.budgetBytes,
@@ -295,8 +343,7 @@ export class InvestigationAgent {
       uncertaintyFlags,
     };
 
-    const completeEntryType =
-      status === "timed-out" ? ("timed-out" as const) : ("investigation-complete" as const);
+    const completeEntryType = status === "timed-out" ? ("timed-out" as const) : ("investigation-complete" as const);
     trace.appendEntry(this.makeBookendEntry(investigationId, completeEntryType));
 
     const investigation: Investigation = {
@@ -313,7 +360,6 @@ export class InvestigationAgent {
 
     const report = this.renderer.render(investigation, evidenceBySource, metadata);
     investigation.report = report;
-
     return investigation;
   }
 
@@ -346,7 +392,7 @@ export class InvestigationAgent {
     };
   }
 
-  private makeTimedOutEntry(investigationId: string): TraceEntry {
+  private makeTimedOutEntry(): TraceEntry {
     return {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
@@ -366,7 +412,7 @@ export class InvestigationAgent {
       type: TraceEntry["type"];
       toolName: string | null;
       input: unknown;
-      output: unknown | null;
+      output: unknown;
       error: string | null;
       durationMs: number;
       scanBytesUsed?: number | null;
@@ -389,14 +435,18 @@ export class InvestigationAgent {
     const raw = reportData["hypotheses"];
     if (!Array.isArray(raw)) return [];
     return raw.map(
-      (h): Hypothesis => ({
-        id: uuidv4(),
-        description: String((h as Record<string, unknown>)["description"] ?? ""),
-        confidence: (h as Record<string, unknown>)["confidence"] as Hypothesis["confidence"] ??
-          "unknown",
-        supportingEvidence: [],
-        contradictingEvidence: [],
-      }),
+      (h): Hypothesis => {
+        const record = h as Record<string, unknown>;
+        const desc = record["description"];
+        const conf = record["confidence"] as Hypothesis["confidence"] | undefined;
+        return {
+          id: uuidv4(),
+          description: typeof desc === "string" ? desc : "",
+          confidence: conf ?? "unknown",
+          supportingEvidence: [],
+          contradictingEvidence: [],
+        };
+      },
     );
   }
 
@@ -419,14 +469,17 @@ export class InvestigationAgent {
     for (const [source, items] of Object.entries(raw as Record<string, unknown>)) {
       if (Array.isArray(items)) {
         result[source] = items.map(
-          (item): EvidenceItem => ({
-            id: uuidv4(),
-            source,
-            timestamp: String((item as Record<string, unknown>)["timestamp"] ?? ""),
-            description: String((item as Record<string, unknown>)["description"] ?? ""),
-            rawData: item,
-            linkingKeys: [],
-          }),
+          (item): EvidenceItem => {
+            const record = item as Record<string, unknown>;
+            return {
+              id: uuidv4(),
+              source,
+              timestamp: typeof record["timestamp"] === "string" ? record["timestamp"] : "",
+              description: typeof record["description"] === "string" ? record["description"] : "",
+              rawData: item,
+              linkingKeys: [],
+            };
+          },
         );
       }
     }

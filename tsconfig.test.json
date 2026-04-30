@@ -4,5 +4,6 @@
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["src/**/*", "tests/**/*", "evals/**/*"]
+  "include": ["src/**/*", "tests/**/*", "evals/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

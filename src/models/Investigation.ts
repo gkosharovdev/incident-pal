@@ -47,7 +47,7 @@ export interface TraceEntry {
   type: TraceEntryType;
   toolName: string | null;
   input: unknown;
-  output: unknown | null;
+  output: unknown;
   error: string | null;
   durationMs: number;
   scanBytesUsed: number | null;

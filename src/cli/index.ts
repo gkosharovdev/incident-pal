@@ -10,6 +10,68 @@ import { EcsDeploymentTool } from "../tools/ecs/EcsDeploymentTool.js";
 import { ServiceCatalogTool } from "../tools/service-catalog/ServiceCatalogTool.js";
 import type { LinkingKey, InvestigationRequest } from "../models/index.js";
 
+interface InvestigateOpts {
+  service: string;
+  env: string;
+  entityId?: string;
+  httpCorrelationId?: string;
+  kafkaMessageId?: string;
+  from?: string;
+  to?: string;
+  description?: string;
+}
+
+function buildLinkingKeys(opts: InvestigateOpts): LinkingKey[] | string {
+  const keys: LinkingKey[] = [];
+  if (opts.entityId) {
+    const parts = opts.entityId.split(":");
+    if (parts.length < 2) {
+      return "--entity-id must be in format type:id (e.g. order:ord-12345)";
+    }
+    const entityType = parts[0] ?? "";
+    const value = parts.slice(1).join(":");
+    keys.push({ type: "entity-id", entityType, value });
+  }
+  if (opts.httpCorrelationId) {
+    keys.push({ type: "http-correlation", value: opts.httpCorrelationId });
+  }
+  if (opts.kafkaMessageId) {
+    keys.push({ type: "kafka-message-id", value: opts.kafkaMessageId });
+  }
+  if (keys.length === 0) {
+    return "At least one of --entity-id, --http-correlation-id, or --kafka-message-id is required";
+  }
+  return keys;
+}
+
+function buildRequest(opts: InvestigateOpts, linkingKeys: LinkingKey[]): InvestigationRequest | string {
+  const environment = opts.env as InvestigationRequest["environment"];
+  if (!["production", "staging", "canary"].includes(environment)) {
+    return `Invalid environment: ${opts.env}. Must be production, staging, or canary`;
+  }
+  const request: InvestigationRequest = {
+    serviceId: opts.service,
+    environment,
+    linkingKeys,
+    ...(opts.from && opts.to ? { timeWindow: { from: opts.from, to: opts.to } } : {}),
+    ...(opts.description ? { observationDescription: opts.description } : {}),
+  };
+  return request;
+}
+
+function applyEnvOptions(request: InvestigationRequest): { request: InvestigationRequest; maxDurationMs: number | undefined } {
+  const maxIterations = process.env["MAX_ITERATIONS"]
+    ? parseInt(process.env["MAX_ITERATIONS"], 10)
+    : undefined;
+  const maxDurationMs = process.env["MAX_DURATION_MS"]
+    ? parseInt(process.env["MAX_DURATION_MS"], 10)
+    : undefined;
+  const finalRequest = maxIterations !== undefined
+    ? { ...request, options: { ...request.options, maxIterations } }
+    : request;
+  return { request: finalRequest, maxDurationMs };
+}
+
 const program = new Command();
 
 program
@@ -28,79 +90,27 @@ program
   .option("--from <datetime>", "Investigation start time (ISO 8601) — optional, defaults to past 60 minutes")
   .option("--to <datetime>", "Investigation end time (ISO 8601) — optional, defaults to now")
   .option("--description <text>", "Optional description of the observed problem")
-  .action(async (opts: {
-    service: string;
-    env: string;
-    entityId?: string;
-    httpCorrelationId?: string;
-    kafkaMessageId?: string;
-    from?: string;
-    to?: string;
-    description?: string;
-  }) => {
-    const linkingKeys: LinkingKey[] = [];
-
-    if (opts.entityId) {
-      const parts = opts.entityId.split(":");
-      if (parts.length < 2) {
-        console.error("--entity-id must be in format type:id (e.g. order:ord-12345)");
-        process.exit(1);
-      }
-      const entityType = parts[0]!;
-      const value = parts.slice(1).join(":");
-      linkingKeys.push({ type: "entity-id", entityType, value });
-    }
-
-    if (opts.httpCorrelationId) {
-      linkingKeys.push({ type: "http-correlation", value: opts.httpCorrelationId });
-    }
-
-    if (opts.kafkaMessageId) {
-      linkingKeys.push({ type: "kafka-message-id", value: opts.kafkaMessageId });
-    }
-
-    if (linkingKeys.length === 0) {
-      console.error("At least one of --entity-id, --http-correlation-id, or --kafka-message-id is required");
+  .action(async (opts: InvestigateOpts) => {
+    const keysOrError = buildLinkingKeys(opts);
+    if (typeof keysOrError === "string") {
+      console.error(keysOrError);
       process.exit(1);
     }
 
-    const environment = opts.env as InvestigationRequest["environment"];
-    if (!["production", "staging", "canary"].includes(environment)) {
-      console.error(`Invalid environment: ${opts.env}. Must be production, staging, or canary`);
+    const requestOrError = buildRequest(opts, keysOrError);
+    if (typeof requestOrError === "string") {
+      console.error(requestOrError);
       process.exit(1);
     }
 
-    const request: InvestigationRequest = {
-      serviceId: opts.service,
-      environment,
-      linkingKeys,
-      ...(opts.from && opts.to
-        ? { timeWindow: { from: opts.from, to: opts.to } }
-        : {}),
-      ...(opts.description ? { observationDescription: opts.description } : {}),
-    };
-
+    const { request, maxDurationMs } = applyEnvOptions(requestOrError);
     const region = process.env["AWS_REGION"] ?? "us-east-1";
-    const catalogPath =
-      process.env["SERVICE_CATALOG_PATH"] ?? join(process.cwd(), "service-catalog.yml");
-    const maxIterations = process.env["MAX_ITERATIONS"]
-      ? parseInt(process.env["MAX_ITERATIONS"], 10)
-      : undefined;
-    const maxDurationMs = process.env["MAX_DURATION_MS"]
-      ? parseInt(process.env["MAX_DURATION_MS"], 10)
-      : undefined;
-
-    if (maxIterations !== undefined) {
-      request.options = { ...request.options, maxIterations };
-    }
-
-    const cwClient = new CloudWatchLogsClient({ region });
-    const ecsClient = new ECSClient({ region });
+    const catalogPath = process.env["SERVICE_CATALOG_PATH"] ?? join(process.cwd(), "service-catalog.yml");
 
     const agent = new InvestigationAgent({
       tools: [
-        new CloudWatchLogsTool(cwClient),
-        new EcsDeploymentTool(ecsClient),
+        new CloudWatchLogsTool(new CloudWatchLogsClient({ region })),
+        new EcsDeploymentTool(new ECSClient({ region })),
         new ServiceCatalogTool(catalogPath),
       ],
       maxDurationMs,
@@ -123,11 +133,7 @@ program
     writeFileSync(
       tracePath,
       JSON.stringify(
-        {
-          investigationId: investigation.id,
-          status: investigation.status,
-          entries: investigation.trace.getEntries(),
-        },
+        { investigationId: investigation.id, status: investigation.status, entries: investigation.trace.getEntries() },
         null,
         2,
       ),

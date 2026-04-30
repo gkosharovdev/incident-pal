@@ -21,7 +21,7 @@ export class LinkingKeyExtractor {
         keys.push({ type: "entity-id", entityType: defaultEntityType, value: fieldValue });
       } else if (keyType === "http-correlation") {
         keys.push({ type: "http-correlation", value: fieldValue });
-      } else if (keyType === "kafka-message-id") {
+      } else {
         keys.push({ type: "kafka-message-id", value: fieldValue });
       }
     }

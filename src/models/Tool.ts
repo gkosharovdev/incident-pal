@@ -2,7 +2,7 @@ import type { JSONSchema7 } from "./JSONSchema.js";
 
 export interface ToolResult {
   success: boolean;
-  data: unknown | null;
+  data: unknown;
   error: string | null;
   scanBytesUsed?: number;
   truncated?: boolean;
