@@ -1,5 +1,7 @@
 # incident-pal Constitution
 
+**Related documents**: [Architecture](.specify/memory/architecture.md) | [AGENTS.md](../../AGENTS.md)
+
 ## Core Principles
 
 ### I. Safety First (NON-NEGOTIABLE)
