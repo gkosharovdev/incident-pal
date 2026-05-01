@@ -1,0 +1,28 @@
+{
+  "scenarioId": "S012",
+  "observationType": "deployment-impact",
+  "description": "Payment service started throwing NullPointerException in PaymentProcessor.charge() three minutes after a new deployment of v2.4.1. Investigation should correlate the deployment with the code change (removal of a null check) and identify the missing null guard as the likely root cause.",
+  "groundTruth": {
+    "likelyFailurePoint": "payment-service-null-check-removal",
+    "rootCauseKeywords": ["PaymentProcessor", "charge", "null check", "deployment", "v2.4.1"],
+    "minimumConfidence": "high"
+  },
+  "input": {
+    "serviceId": "payment-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "payment", "value": "pay-5678" }
+    ],
+    "timeWindow": {
+      "from": "2026-04-30T11:55:00Z",
+      "to": "2026-04-30T12:30:00Z"
+    },
+    "observationDescription": "Payment pay-5678 failed with NullPointerException in PaymentProcessor.charge() shortly after a deployment"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S012/cloudwatch-response.json",
+    "ecs-deployment": "S012/ecs-deployment-response.json",
+    "git-code-retrieval": "S012/git-code-retrieval-response.json",
+    "repo-documentation": "S012/repo-documentation-response.json"
+  }
+}

@@ -40,7 +40,19 @@ Investigations are observation-type agnostic. You handle:
 - Failed or missing payments
 - Faulty or incorrect data
 - Incorrect entity status
-- Any other user-impacting production discrepancy`;
+- Any other user-impacting production discrepancy
+
+## Code & Architecture Analysis
+
+When \`git-code-retrieval\` and/or \`repo-documentation\` tools are available, follow this investigation sequence for deployments detected within the time window:
+
+1. **Architecture context first**: Call \`repo-documentation\` to read README, AGENTS.md, ADR files, and .specify documentation. Build a mental model of the service's design and business flow before inspecting code changes.
+2. **Code changes**: Call \`git-code-retrieval\` with \`operation: "get-commit"\` (or \`"compare"\` for multi-commit deployments) to retrieve the diff introduced by the deployment.
+3. **Code flow tracing**: For each suspicious change, use \`operation: "search-symbol"\` to locate the method or class referenced in the logs, then \`operation: "get-file"\` to read the full file and trace the invocation chain.
+4. **DB correlation**: Cross-reference the code path with the current entity state retrieved from \`aurora-db\`. Look for mismatches between what the code intends and what the database contains.
+5. **Synthesis**: When producing the report, include a "Code & Architecture Analysis" section that summarises: the architectural context, the specific code change most likely responsible, the call chain from entry point to failure, and how the current DB state corroborates or contradicts the hypothesis.
+
+Steps referencing a tool that is not registered are silently skipped.`;
 
 function formatLinkingKey(key: LinkingKey): string {
   if (key.type === "entity-id") {

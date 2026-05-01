@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "data": {
+    "files": [
+      {
+        "filePath": "README.md",
+        "content": "# Payment Service\n\nHandles payment processing for all order flows. Integrates with the payment gateway to charge customers at order confirmation time.\n\n## Architecture\n\nThe service follows a thin-controller pattern. `PaymentController` delegates to `PaymentProcessor`, which calls the external payment `Gateway`. Null or invalid amounts are expected to be validated by the upstream Order Service before a charge is requested.\n\n## Key Classes\n\n- `PaymentProcessor` — core charge logic; delegates to `Gateway`\n- `PaymentController` — HTTP entry point\n- `Receipt` — value object returned after a charge\n",
+        "sizeBytes": 512,
+        "truncated": false
+      },
+      {
+        "filePath": "adr/001-upstream-null-responsibility.md",
+        "content": "# ADR 001: Upstream Responsibility for Null Amount Validation\n\n**Status**: Accepted\n**Date**: 2026-03-15\n\n## Context\n\nHistorically, PaymentProcessor contained a null guard on the `amount` parameter. As of v2.0, OrderService became responsible for validating payment amounts before dispatching charge requests.\n\n## Decision\n\nThe null guard in `PaymentProcessor.charge()` is to be removed in a follow-up refactor. Callers are contractually obligated to pass a non-null `Money` object.\n\n## Consequences\n\nIf a caller passes `null`, a `NullPointerException` will propagate instead of the previous silent skip. Monitoring must catch this regression if the upstream contract is violated.\n",
+        "sizeBytes": 720,
+        "truncated": false
+      }
+    ],
+    "scannedPaths": ["README.md", "AGENTS.md", ".specify", "adr", "docs/adr"],
+    "missingPaths": ["AGENTS.md", ".specify", "docs/adr"]
+  },
+  "error": null
+}

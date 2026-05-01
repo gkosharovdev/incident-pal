@@ -1,5 +1,6 @@
 services:
   - id: order-service
+    repositoryUrl: https://github.com/example-org/order-service
     displayName: Order Service
     environments:
       - production
@@ -32,6 +33,7 @@ services:
         credentialSource: iam
 
   - id: notification-service
+    repositoryUrl: https://github.com/example-org/notification-service
     displayName: Notification Service
     environments:
       - production
@@ -48,6 +50,7 @@ services:
       - notification-failure
 
   - id: payment-service
+    repositoryUrl: https://github.com/example-org/payment-service
     displayName: Payment Service
     environments:
       - production
@@ -79,6 +82,7 @@ services:
         credentialSource: iam
 
   - id: customer-service
+    repositoryUrl: https://github.com/example-org/customer-service
     displayName: Customer Service
     environments:
       - production
@@ -94,6 +98,7 @@ services:
       - data-discrepancy
 
   - id: dispatch-service
+    repositoryUrl: https://github.com/example-org/dispatch-service
     displayName: Dispatch Service
     environments:
       - production

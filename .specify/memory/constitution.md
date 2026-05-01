@@ -35,6 +35,8 @@ Additional clean code rules:
 - No commented-out code in committed files.
 - Public APIs are documented with types.
 
+**Amendment (v1.2.0) — Additive prompt changes**: Additive changes to `SYSTEM_PROMPT` in `src/agent/prompts.ts` are exempt from the "no core file modification" prohibition in §VI, subject to three conditions: (1) only the `SYSTEM_PROMPT` constant is modified; (2) the change is purely additive — no existing text is removed or reordered; (3) the purpose is to extend investigation guidance for newly registered tool categories, not to add structural data-source support. All other modifications to files under `src/agent/` continue to require a formal constitution amendment with written rationale and team review.
+
 ### IV. Language Standards
 
 TypeScript is the primary implementation language. Java is acceptable as an alternative if TypeScript is unsuitable for a specific integration. Python is NOT used in this project — the team has no Python expertise and the maintenance cost of Python dependencies is not acceptable.
@@ -87,4 +89,4 @@ This constitution supersedes all other project practices. Amendments require:
 
 All PRs must verify compliance with this constitution before merge. Complexity or exceptions must be documented in the plan's Complexity Tracking table.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-30 | **Last Amended**: 2026-04-30
+**Version**: 1.2.0 | **Ratified**: 2026-04-30 | **Last Amended**: 2026-05-01
