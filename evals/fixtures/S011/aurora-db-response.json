@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "id": "ord-9876",
+      "status": "pending",
+      "updated_at": "2026-05-01T08:41:55.000Z",
+      "customer_id": "cust-101",
+      "total_amount": "49.99"
+    }
+  ],
+  "rowCount": 1,
+  "rowCap": 100,
+  "truncated": false,
+  "queryExecutedMs": 12,
+  "serviceId": "order-service",
+  "environment": "production"
+}

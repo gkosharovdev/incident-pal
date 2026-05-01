@@ -1,0 +1,43 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-05-01T08:42:11Z",
+      "message": {
+        "level": "INFO",
+        "event": "order.status_updated",
+        "orderId": "ord-9876",
+        "previousStatus": "pending",
+        "newStatus": "completed",
+        "traceId": "trace-s011-abc",
+        "serviceVersion": "2.4.1"
+      },
+      "fields": {
+        "@timestamp": "2026-05-01T08:42:11Z",
+        "@message": "{\"level\":\"INFO\",\"event\":\"order.status_updated\",\"orderId\":\"ord-9876\",\"previousStatus\":\"pending\",\"newStatus\":\"completed\",\"traceId\":\"trace-s011-abc\",\"serviceVersion\":\"2.4.1\"}",
+        "orderId": "ord-9876",
+        "traceId": "trace-s011-abc"
+      },
+      "raw": "{\"level\":\"INFO\",\"event\":\"order.status_updated\",\"orderId\":\"ord-9876\",\"previousStatus\":\"pending\",\"newStatus\":\"completed\",\"traceId\":\"trace-s011-abc\",\"serviceVersion\":\"2.4.1\"}"
+    },
+    {
+      "timestamp": "2026-05-01T08:42:12Z",
+      "message": {
+        "level": "INFO",
+        "event": "order.status_published",
+        "orderId": "ord-9876",
+        "status": "completed",
+        "traceId": "trace-s011-abc"
+      },
+      "fields": {
+        "@timestamp": "2026-05-01T08:42:12Z",
+        "@message": "{\"level\":\"INFO\",\"event\":\"order.status_published\",\"orderId\":\"ord-9876\",\"status\":\"completed\",\"traceId\":\"trace-s011-abc\"}",
+        "orderId": "ord-9876",
+        "traceId": "trace-s011-abc"
+      },
+      "raw": "{\"level\":\"INFO\",\"event\":\"order.status_published\",\"orderId\":\"ord-9876\",\"status\":\"completed\",\"traceId\":\"trace-s011-abc\"}"
+    }
+  ],
+  "truncated": false,
+  "scannedBytesEstimate": 1024,
+  "unparsedCount": 0
+}

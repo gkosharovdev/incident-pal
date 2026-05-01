@@ -45,6 +45,7 @@ const GOLDEN_SET_SCENARIO_IDS = [
   "S006",
   "S009",
   "S010",
+  "S011-aurora-db",
 ];
 
 const scenarios = GOLDEN_SET_SCENARIO_IDS.map(loadScenario);
