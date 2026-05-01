@@ -1,6 +1,6 @@
 # Contract: TUI CLI Interface
 
-**Date**: 2026-05-01 | **Branch**: `004-tui-agent-monitor`
+**Date**: 2026-05-01 (updated 2026-05-01) | **Branch**: `004-tui-agent-monitor`
 
 ---
 
@@ -31,7 +31,8 @@ incident-pal tui [options]
 1. If `--headless` is set **or** `process.stdout.isTTY` is falsy → headless mode:
    - Read `ANTHROPIC_API_KEY` from environment. If absent → exit code 1, error to stderr.
    - Read `AWS_PROFILE` from environment. If absent → exit code 1, error to stderr.
-   - No Ink app is started. Exits immediately after validation (the headless path does not run an investigation — it validates config only; actual investigation in headless mode uses the existing `incident-pal investigate` subcommand).
+   - No Ink app is started. Print confirmation message to stdout and exit code 0.
+   - **Design note**: `incident-pal tui --headless` is a credential-validation command only. It confirms that the required environment variables are present and correctly named before a pipeline runs. To run an investigation non-interactively, use the existing `incident-pal investigate` subcommand (which reads the same env vars and needs no TUI). This separation keeps the TUI's responsibility narrow and the `investigate` subcommand composable in scripts.
 2. If interactive mode:
    - Check OS keychain for `incident-pal / anthropic-api-key` and `incident-pal / aws-profile`.
    - If either is missing → start `SetupWizardScreen`.
@@ -41,10 +42,9 @@ incident-pal tui [options]
 
 | Code | Meaning |
 |------|---------|
-| `0` | Normal exit (user quit TUI or investigation complete) |
+| `0` | Normal exit (user quit TUI, investigation complete, or headless validation passed) |
 | `1` | Missing required env var in headless mode |
-| `2` | OS keychain unavailable (interactive mode only; user is shown error and exits) |
-| `3` | Terminal dimensions below minimum |
+| `2` | OS keychain unavailable (interactive mode only; user is shown error screen and exits) |
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-05-01
-**Updated**: 2026-05-01 (post-clarification pass)
+**Updated**: 2026-05-01 (post-analysis remediation)
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -32,5 +32,8 @@
 
 ## Notes
 
-- Post-clarification: credential setup wizard (US-2), keychain storage (FR-013–FR-018), headless mode with TTY detection + `--headless` flag, and SC-007 added.
-- All items pass. Spec is ready for `/speckit-plan`.
+- Post-analysis remediation complete (2026-05-01):
+  - tasks.md: 8 new tasks added (T004, T005, T011, T021, T024, T043, T050, T051); 3 tasks corrected (T020/settings shortcut, T009/headless, T047/dimensions warn)
+  - plan.md: `useProfiles.ts` hook added to structure; `ink-testing-library` added to dependencies
+  - contracts/tui-cli-contract.md: headless mode intent clarified; exit code 3 removed
+- All items pass. Spec is ready for `/speckit-implement`.

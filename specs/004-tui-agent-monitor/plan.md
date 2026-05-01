@@ -18,6 +18,7 @@ Build an interactive terminal UI (TUI) for incident-pal that guides operators th
   - `keytar` — OS keychain access (macOS Keychain / Linux Secret Service)
   - `@aws-sdk/shared-ini-file-loader` — read `~/.aws/credentials` profile list (already in AWS SDK ecosystem)
   - `ink-text-input` — masked/plain text input field component for Ink
+  - `ink-testing-library` — test utility for rendering Ink components in Vitest (dev dependency)
 **Storage**: OS keychain (credentials), `~/.incident-pal/profiles.json` (investigation profiles)
 **Testing**: Vitest (existing); Ink components testable via `ink-testing-library`
 **Target Platform**: macOS and Linux terminals supporting 256-colour ANSI; minimum 80×24 columns/rows
@@ -88,7 +89,8 @@ src/
     ├── hooks/
     │   ├── useInvestigation.ts    # Agent lifecycle: start, stream, complete
     │   ├── useKeychain.ts         # Read/write credentials via keytar
-    │   └── useAwsProfiles.ts      # Load profile names from ~/.aws/credentials
+    │   ├── useAwsProfiles.ts      # Load profile names from ~/.aws/credentials
+    │   └── useProfiles.ts         # CRUD state wrapper for InvestigationProfileService
     └── services/
         ├── KeychainService.ts     # OS keychain access (keytar wrapper)
         ├── AwsProfileService.ts   # Parse profile names from ~/.aws/credentials
