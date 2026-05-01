@@ -1,0 +1,27 @@
+{
+  "deployments": [
+    {
+      "id": "ecs-deploy-v241",
+      "status": "PRIMARY",
+      "taskDefinition": "payment-service:47",
+      "imageTag": "v2.4.1",
+      "commitSha": "d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2",
+      "createdAt": "2026-04-30T11:58:02Z",
+      "updatedAt": "2026-04-30T11:58:47Z",
+      "runningCount": 3,
+      "desiredCount": 3
+    },
+    {
+      "id": "ecs-deploy-v240",
+      "status": "INACTIVE",
+      "taskDefinition": "payment-service:46",
+      "imageTag": "v2.4.0",
+      "commitSha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+      "createdAt": "2026-04-29T14:30:00Z",
+      "updatedAt": "2026-04-30T11:58:47Z",
+      "runningCount": 0,
+      "desiredCount": 0
+    }
+  ],
+  "clusterArn": "arn:aws:ecs:eu-west-1:123456789:cluster/main-cluster"
+}

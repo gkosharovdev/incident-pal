@@ -29,6 +29,7 @@
     "@aws-sdk/client-ecs": "^3.782.0",
     "@aws-sdk/rds-signer": "^3.1040.0",
     "commander": "^13.1.0",
+    "@octokit/rest": "^21.0.0",
     "js-yaml": "^4.1.0",
     "pg": "^8.20.0",
     "uuid": "^11.1.0",
