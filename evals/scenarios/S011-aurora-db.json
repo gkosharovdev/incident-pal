@@ -1,0 +1,26 @@
+{
+  "scenarioId": "S011-aurora-db",
+  "observationType": "data-discrepancy",
+  "description": "Order ord-9876 shows 'completed' in order-service logs but the Aurora PostgreSQL database record shows status 'pending'. Investigation should identify the database as the authoritative source and surface the status discrepancy as the likely failure point.",
+  "groundTruth": {
+    "likelyFailurePoint": "order-service-db-state",
+    "rootCauseKeywords": ["pending", "status discrepancy", "database", "ord-9876"],
+    "minimumConfidence": "medium"
+  },
+  "input": {
+    "serviceId": "order-service",
+    "environment": "production",
+    "linkingKeys": [
+      { "type": "entity-id", "entityType": "order", "value": "ord-9876" }
+    ],
+    "timeWindow": {
+      "from": "2026-05-01T08:00:00Z",
+      "to": "2026-05-01T09:00:00Z"
+    },
+    "observationDescription": "Order ord-9876 shows completed in service logs but customer sees pending status in the app"
+  },
+  "fixtures": {
+    "cloudwatch-logs": "S011/cloudwatch-response.json",
+    "aurora-db": "S011/aurora-db-response.json"
+  }
+}

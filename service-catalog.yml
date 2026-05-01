@@ -15,6 +15,21 @@ services:
     observationTypes:
       - incorrect-status
       - payment-failure
+    auroraDatabase:
+      production:
+        host: order-service.cluster-prod-abc123.eu-west-1.rds.amazonaws.com
+        port: 5432
+        database: order_service_prod
+        username: iam_investigation_user
+        region: eu-west-1
+        credentialSource: iam
+      staging:
+        host: order-service-staging.cluster-stg-def456.eu-west-1.rds.amazonaws.com
+        port: 5432
+        database: order_service_staging
+        username: iam_investigation_user
+        region: eu-west-1
+        credentialSource: iam
 
   - id: notification-service
     displayName: Notification Service
@@ -47,6 +62,21 @@ services:
       traceId: http-correlation
     observationTypes:
       - payment-failure
+    auroraDatabase:
+      production:
+        host: payment-service.cluster-prod-ghi789.eu-west-1.rds.amazonaws.com
+        port: 5432
+        database: payment_service_prod
+        username: iam_investigation_user
+        region: eu-west-1
+        credentialSource: iam
+      staging:
+        host: payment-service-staging.cluster-stg-jkl012.eu-west-1.rds.amazonaws.com
+        port: 5432
+        database: payment_service_staging
+        username: iam_investigation_user
+        region: eu-west-1
+        credentialSource: iam
 
   - id: customer-service
     displayName: Customer Service
