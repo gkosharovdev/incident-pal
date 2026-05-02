@@ -28,6 +28,8 @@ export interface InvestigationAgentConfig {
   tools: Tool[];
   anthropicClient?: Anthropic;
   maxDurationMs?: number | undefined;
+  /** Called synchronously after each TraceEntry is appended. Must not throw. */
+  onTraceEntry?: ((entry: TraceEntry) => void) | undefined;
 }
 
 interface SessionState {
@@ -50,6 +52,7 @@ export class InvestigationAgent {
   private readonly maxDurationMs: number;
   private readonly renderer: ReportRenderer;
   private readonly extractor: LinkingKeyExtractor;
+  private readonly onTraceEntry: ((entry: TraceEntry) => void) | undefined;
 
   constructor(config: InvestigationAgentConfig) {
     this.registry = new ToolRegistry();
@@ -58,8 +61,20 @@ export class InvestigationAgent {
     }
     this.anthropic = config.anthropicClient ?? new Anthropic();
     this.maxDurationMs = config.maxDurationMs ?? DEFAULT_MAX_DURATION_MS;
+    this.onTraceEntry = config.onTraceEntry;
     this.renderer = new ReportRenderer();
     this.extractor = new LinkingKeyExtractor();
+  }
+
+  private appendAndNotify(trace: import("../models/Trace.js").Trace, entry: TraceEntry): void {
+    trace.appendEntry(entry);
+    if (this.onTraceEntry) {
+      try {
+        this.onTraceEntry(entry);
+      } catch {
+        // TUI observer must not interrupt the investigation loop
+      }
+    }
   }
 
   async investigate(request: InvestigationRequest): Promise<Investigation> {
@@ -68,7 +83,7 @@ export class InvestigationAgent {
     const budget = new ScanBudget(resolvedRequest.options?.scanBudgetBytes ?? DEFAULT_SCAN_BUDGET_BYTES);
     const state = this.createSessionState(budget, resolvedRequest.linkingKeys);
 
-    state.trace.appendEntry(this.makeBookendEntry(state.investigationId, "investigation-started"));
+    this.appendAndNotify(state.trace, this.makeBookendEntry(state.investigationId, "investigation-started"));
 
     const messages: Anthropic.MessageParam[] = [
       { role: "user", content: buildInvestigationContext(resolvedRequest) },
@@ -79,7 +94,7 @@ export class InvestigationAgent {
     while (iterationCount < maxIterations && !state.timedOut) {
       if (state.timer.isExpired()) {
         state.timedOut = true;
-        state.trace.appendEntry(this.makeTimedOutEntry());
+        this.appendAndNotify(state.trace, this.makeTimedOutEntry());
         break;
       }
       iterationCount++;
@@ -149,7 +164,7 @@ export class InvestigationAgent {
   ): Promise<Anthropic.ToolResultBlockParam> {
     if (state.timer.isExpired()) {
       state.timedOut = true;
-      state.trace.appendEntry(this.makeTimedOutEntry());
+      this.appendAndNotify(state.trace, this.makeTimedOutEntry());
       return { type: "tool_result", tool_use_id: toolUse.id, content: JSON.stringify({ error: "timeout" }), is_error: true };
     }
     const tool = this.registry.lookup(toolUse.name);
@@ -164,7 +179,7 @@ export class InvestigationAgent {
     toolUse: Anthropic.ToolUseBlock,
     state: SessionState,
   ): Anthropic.ToolResultBlockParam {
-    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+    this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
       type: "tool-unavailable",
       toolName: toolUse.name,
       input: toolUse.input,
@@ -185,7 +200,7 @@ export class InvestigationAgent {
     toolUse: Anthropic.ToolUseBlock,
     state: SessionState,
   ): Anthropic.ToolResultBlockParam {
-    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+    this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
       type: "budget-exhausted",
       toolName: toolUse.name,
       input: toolUse.input,
@@ -211,7 +226,7 @@ export class InvestigationAgent {
     try {
       result = await tool.invoke(toolUse.input);
     } catch (err) {
-      state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+      this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
         type: "tool-error",
         toolName: toolUse.name,
         input: toolUse.input,
@@ -247,7 +262,7 @@ export class InvestigationAgent {
     if (result.scanBytesUsed) state.budget.record(result.scanBytesUsed);
     if (result.truncated) {
       state.resultsTruncated = true;
-      state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+      this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
         type: "result-truncated",
         toolName: toolUse.name,
         input: toolUse.input,
@@ -257,7 +272,7 @@ export class InvestigationAgent {
       }));
     }
     const entryType = result.success ? "tool-call" : "tool-error";
-    state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+    this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
       type: entryType,
       toolName: toolUse.name,
       input: toolUse.input,
@@ -304,7 +319,7 @@ export class InvestigationAgent {
     for (const key of discoveredKeys) {
       const isNew = state.activeLinkingKeys.add(key);
       if (isNew) {
-        state.trace.appendEntry(this.makeTraceEntry(state.investigationId, {
+        this.appendAndNotify(state.trace, this.makeTraceEntry(state.investigationId, {
           type: "linking-key-discovered",
           toolName: null,
           input: { discoveredFrom: toolUse.name },
@@ -344,7 +359,7 @@ export class InvestigationAgent {
     };
 
     const completeEntryType = status === "timed-out" ? ("timed-out" as const) : ("investigation-complete" as const);
-    trace.appendEntry(this.makeBookendEntry(investigationId, completeEntryType));
+    this.appendAndNotify(trace, this.makeBookendEntry(investigationId, completeEntryType));
 
     const investigation: Investigation = {
       id: investigationId,
