@@ -50,6 +50,35 @@ The Markdown report is written to **stdout**. The full JSON audit trace is writt
 
 ---
 
+## Interactive TUI
+
+For a guided experience, use the terminal UI instead of the CLI flags:
+
+```bash
+incident-pal tui
+```
+
+**First launch** — a setup wizard prompts for your Anthropic API key and AWS profile. Credentials are saved to the OS keychain and reused on subsequent launches.
+
+From the investigation form you can fill in service, environment, and an optional linking key, then watch the agent's event stream live as it works. When the investigation completes the TUI switches to a report view with a tabbed summary, hypotheses, actions, and raw trace.
+
+### Headless mode
+
+`--headless` skips the interactive UI and validates that the required environment variables are present, then exits:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export AWS_PROFILE=my-profile
+
+incident-pal tui --headless   # exits 0 if both vars are set, 1 otherwise
+```
+
+This is useful as a pre-flight check in CI or wrapper scripts. For non-interactive investigations, continue to use `incident-pal investigate` (the env vars `ANTHROPIC_API_KEY` and `AWS_PROFILE` are also honoured there).
+
+See [specs/004-tui-agent-monitor/quickstart.md](specs/004-tui-agent-monitor/quickstart.md) for build steps, keyboard shortcuts, and local development tips.
+
+---
+
 ## Running Tests
 
 ```bash
@@ -106,7 +135,8 @@ src/
 │       └── notification-outbox/ # NotificationOutboxTool (reference extension template)
 ├── models/         # TypeScript types, Tool interface, Trace, TraceSerializer, Zod validation
 ├── report/         # ReportRenderer (structured → Markdown)
-└── cli/            # CLI entrypoint (commander)
+├── tui/            # Interactive terminal UI (Ink/React) — screens, hooks, services
+└── cli/            # CLI entrypoint (commander); tui subcommand live-loads src/tui
 
 tests/
 ├── unit/           # Unit tests (mock tools, no AWS calls)
@@ -150,4 +180,6 @@ No changes to core agent code are needed. See [contracts/tool-interface.md](spec
 - [Tool Interface Contract](specs/001-ecs-investigation-agent/contracts/tool-interface.md)
 - [Investigation Invocation Contract](specs/001-ecs-investigation-agent/contracts/investigation-invocation.md)
 - [Quickstart (detailed)](specs/001-ecs-investigation-agent/quickstart.md)
+- [TUI Quickstart](specs/004-tui-agent-monitor/quickstart.md)
+- [TUI Specification](specs/004-tui-agent-monitor/spec.md)
 - [Project Constitution](.specify/memory/constitution.md)
