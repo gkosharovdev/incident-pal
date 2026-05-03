@@ -22,5 +22,5 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "evals"]
+  "exclude": ["node_modules", "dist", "tests", "evals", "src/tui/**/*"]
 }

@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/003-git-code-retrieval/plan.md
+at specs/004-tui-agent-monitor/plan.md
 <!-- SPECKIT END -->
 
 For agent-specific guidance (build commands, architecture overview, how to extend with new tools),

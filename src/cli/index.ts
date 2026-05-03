@@ -141,6 +141,20 @@ program
     process.stderr.write(`Trace written to ${tracePath}\n`);
   });
 
+program
+  .command("tui")
+  .description("Launch the interactive terminal UI")
+  .option("--headless", "Force headless credential-validation mode (no interactive UI)", false)
+  .action((opts: { headless: boolean }) => {
+    // Dynamic import keeps the TUI's React/Ink deps out of the main agent bundle.
+    import("../tui/index.js").then(({ launchTui }) => {
+      launchTui({ headless: opts.headless });
+    }).catch((err: unknown) => {
+      console.error(`Failed to start TUI: ${String(err)}`);
+      process.exit(1);
+    });
+  });
+
 program.parseAsync(process.argv).catch((err: unknown) => {
   console.error(err);
   process.exit(1);
