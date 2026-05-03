@@ -1,13 +1,14 @@
-import React from "react";
-import { render } from "ink";
-import App from "./App.js";
+const MIN_COLS = 80;
+const MIN_ROWS = 24;
 
 export interface TuiOptions {
   readonly headless: boolean;
 }
 
-const MIN_COLS = 80;
-const MIN_ROWS = 24;
+export interface HeadlessValidationResult {
+  readonly valid: boolean;
+  readonly missing: string[];
+}
 
 export function launchTui(options: TuiOptions): void {
   const isHeadless = options.headless || !process.stdout.isTTY;
@@ -25,12 +26,15 @@ export function launchTui(options: TuiOptions): void {
     );
   }
 
-  render(<App />);
-}
-
-export interface HeadlessValidationResult {
-  readonly valid: boolean;
-  readonly missing: string[];
+  // Typed as string so the main tsconfig doesn't resolve this path to JSX files.
+  // launch.tsx is compiled separately by tsconfig.tui.json and loaded at runtime.
+  const renderModule: string = "./launch.js";
+  void (import(renderModule) as Promise<{ renderApp: () => void }>)
+    .then(({ renderApp }) => { renderApp(); })
+    .catch((err: unknown) => {
+      process.stderr.write(`Failed to render TUI: ${String(err)}\n`);
+      process.exit(1);
+    });
 }
 
 export function validateHeadlessCredentials(): HeadlessValidationResult {

@@ -147,8 +147,7 @@ program
   .option("--headless", "Force headless credential-validation mode (no interactive UI)", false)
   .action((opts: { headless: boolean }) => {
     // Dynamic import keeps the TUI's React/Ink deps out of the main agent bundle.
-    // @ts-expect-error - TUI is compiled separately via tsconfig.tui.json (JSX boundary)
-    import("../tui/index.js").then(({ launchTui }: { launchTui: (opts: { headless: boolean }) => void }) => {
+    import("../tui/index.js").then(({ launchTui }) => {
       launchTui({ headless: opts.headless });
     }).catch((err: unknown) => {
       console.error(`Failed to start TUI: ${String(err)}`);
