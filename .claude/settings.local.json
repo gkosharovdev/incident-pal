@@ -9,7 +9,27 @@
       "Bash(npm test *)",
       "Bash(npm run *)",
       "Bash(bash .specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"aurora-db-query-tool\" \"aurora postgresql db tool which enables querying the db of the concrete service under investigation so that the agent can correlate the logs with the data itself in that particular environment\")",
-      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"git-code-retrieval\" \"add git repository code retrieval tool to correlate deployed version with source code\")"
+      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"git-code-retrieval\" \"add git repository code retrieval tool to correlate deployed version with source code\")",
+      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"tui-agent-monitor\" \"TUI for the incident-pal agent so that it is easier for a human user to configure and monitor the agent event stream in a similar fashion to claude code or opencode for example\")",
+      "WebSearch",
+      "Bash(git add *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T045 /- [X] T045 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T047 /- [X] T047 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T052 /- [X] T052 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T048 /- [X] T048 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T049 /- [X] T049 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(sed -i '' \"s/^- \\\\[ \\\\] T046 /- [X] T046 /\" specs/004-tui-agent-monitor/tasks.md)",
+      "Bash(npx eslint *)",
+      "Bash(sed -i '' 's/import React, { useEffect, useRef } from \"react\";/import React from \"react\";/' /Users/georgi.kosharov/IdeaProjects/incident-pal/src/tui/screens/StreamViewScreen.tsx)",
+      "Bash(sed -i '' '/^import { execSync } from \"node:child_process\";$/d' /Users/georgi.kosharov/IdeaProjects/incident-pal/tests/integration/tui/headless.test.ts)",
+      "Bash(sed -i '' '/^import { execFileSync } from \"node:child_process\";$/d' /Users/georgi.kosharov/IdeaProjects/incident-pal/tests/integration/tui/headless.test.ts)",
+      "Bash(grep -v \"^$\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(node --trace-deprecation -e \"import\\('./dist/cli/index.js'\\)\")"
     ]
   }
 }

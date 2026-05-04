@@ -23,7 +23,7 @@ const CATALOG_CONFIG: AuroraDatabaseConfig = {
 
 const VALID_INPUT = {
   serviceId: "order-service",
-  environment: "production" as const,
+  environment: "prod" as const,
   query: "SELECT id, status FROM orders WHERE id = 'ord-1'",
 };
 
@@ -237,48 +237,48 @@ describe("AuroraDbGuard — CTE rejection", () => {
 });
 
 // ---------------------------------------------------------------------------
-// T023 — environment routing: production and staging return different hosts (US3)
+// T023 — environment routing: prod and dev return different hosts (US3)
 // ---------------------------------------------------------------------------
 describe("AuroraDbCatalogReader — environment routing", () => {
   const FIXTURE_YAML = `
 services:
   - id: order-service
     auroraDatabase:
-      production:
+      prod:
         host: prod-host.rds.amazonaws.com
         port: 5432
         database: order_service_prod
         username: iam_user
         region: eu-west-1
         credentialSource: iam
-      staging:
-        host: staging-host.rds.amazonaws.com
+      dev:
+        host: dev-host.rds.amazonaws.com
         port: 5432
-        database: order_service_staging
+        database: order_service_dev
         username: iam_user
         region: eu-west-1
         credentialSource: iam
 `;
 
-  it("returns distinct host values for production vs staging", () => {
+  it("returns distinct host values for prod vs dev", () => {
     const dir = mkdtempSync(join(tmpdir(), "aurora-test-"));
     const path = join(dir, "catalog.yml");
     writeFileSync(path, FIXTURE_YAML);
 
     const reader = new AuroraDbCatalogReader(path);
-    const prod = reader.resolve("order-service", "production");
-    const staging = reader.resolve("order-service", "staging");
+    const prod = reader.resolve("order-service", "prod");
+    const dev = reader.resolve("order-service", "dev");
 
     expect(prod).not.toBeNull();
-    expect(staging).not.toBeNull();
-    expect(prod?.host).not.toBe(staging?.host);
+    expect(dev).not.toBeNull();
+    expect(prod?.host).not.toBe(dev?.host);
     expect(prod?.host).toBe("prod-host.rds.amazonaws.com");
-    expect(staging?.host).toBe("staging-host.rds.amazonaws.com");
+    expect(dev?.host).toBe("dev-host.rds.amazonaws.com");
   });
 });
 
 // ---------------------------------------------------------------------------
-// T024 — missing canary entry → null → NO_DB_CONFIGURED (US3)
+// T024 — missing catalog entry → null → NO_DB_CONFIGURED (US3)
 // ---------------------------------------------------------------------------
 describe("AuroraDbTool — no catalog entry", () => {
   it("returns NO_DB_CONFIGURED when catalog has no entry for requested service/environment", async () => {

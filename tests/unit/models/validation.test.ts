@@ -9,7 +9,7 @@ describe("investigationRequestSchema", () => {
   it("accepts a minimal valid request", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
     });
     expect(result.success).toBe(true);
@@ -18,7 +18,7 @@ describe("investigationRequestSchema", () => {
   it("accepts all linking key types", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "staging",
+      environment: "dev",
       linkingKeys: [
         { type: "entity-id", entityType: "order", value: "ord-1" },
         { type: "http-correlation", value: "trace-abc" },
@@ -31,7 +31,7 @@ describe("investigationRequestSchema", () => {
   it("rejects empty serviceId", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
     });
     expect(result.success).toBe(false);
@@ -40,7 +40,7 @@ describe("investigationRequestSchema", () => {
   it("rejects empty linkingKeys array", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [],
     });
     expect(result.success).toBe(false);
@@ -49,7 +49,7 @@ describe("investigationRequestSchema", () => {
   it("rejects invalid environment", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "dev",
+      environment: "staging",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
     });
     expect(result.success).toBe(false);
@@ -58,7 +58,7 @@ describe("investigationRequestSchema", () => {
   it("rejects timeWindow where from >= to", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
       timeWindow: { from: PAST_TO, to: PAST_FROM },
     });
@@ -68,7 +68,7 @@ describe("investigationRequestSchema", () => {
   it("rejects future to in timeWindow", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
       timeWindow: { from: PAST_FROM, to: FUTURE },
     });
@@ -78,7 +78,7 @@ describe("investigationRequestSchema", () => {
   it("accepts optional observationDescription up to 500 chars", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
       observationDescription: "payment not processed",
     });
@@ -88,7 +88,7 @@ describe("investigationRequestSchema", () => {
   it("rejects observationDescription over 500 chars", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
       observationDescription: "x".repeat(501),
     });
@@ -98,7 +98,7 @@ describe("investigationRequestSchema", () => {
   it("accepts valid timeWindow", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "svc",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "t" }],
       timeWindow: { from: PAST_FROM, to: PAST_TO },
     });

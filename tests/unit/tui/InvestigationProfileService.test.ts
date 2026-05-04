@@ -26,7 +26,7 @@ describe("InvestigationProfileService", () => {
     const saved = svc.save({
       name: "Test Profile",
       serviceId: "my-service",
-      environment: "production",
+      environment: "prod",
       defaultLinkingKeyPrefix: "order",
     });
     expect(saved.id).toBeTruthy();
@@ -41,14 +41,14 @@ describe("InvestigationProfileService", () => {
     svc.save({
       name: "Dup",
       serviceId: "svc",
-      environment: "staging",
+      environment: "dev",
       defaultLinkingKeyPrefix: null,
     });
     expect(() =>
       svc.save({
         name: "Dup",
         serviceId: "svc2",
-        environment: "staging",
+        environment: "dev",
         defaultLinkingKeyPrefix: null,
       }),
     ).toThrow(/already exists/);
@@ -58,7 +58,7 @@ describe("InvestigationProfileService", () => {
     const p = svc.save({
       name: "ToDelete",
       serviceId: "svc",
-      environment: "staging",
+      environment: "dev",
       defaultLinkingKeyPrefix: null,
     });
     svc.delete(p.id);

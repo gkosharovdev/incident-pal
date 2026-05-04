@@ -58,7 +58,7 @@ describe("AuroraDbTool integration", () => {
 
     const result = await registry.lookup("aurora-db")!.invoke({
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       query: "SELECT id, status FROM orders WHERE id = 'ord-9876'",
     });
 
@@ -79,7 +79,7 @@ describe("AuroraDbTool integration", () => {
 
     const result = await registry.lookup("aurora-db")!.invoke({
       serviceId: "order-service",
-      environment: "canary",
+      environment: "dev",
       query: "SELECT 1",
     });
 

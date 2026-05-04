@@ -8,7 +8,7 @@ import type { Environment } from "../../models/index.js";
 
 type ProfilesMode = "list" | "create" | "confirm-delete";
 
-const ENVIRONMENTS: Environment[] = ["production", "staging", "canary"];
+const ENVIRONMENTS: Environment[] = ["prod", "dev"];
 
 interface ProfilesScreenProps {
   readonly onBack: () => void;
@@ -82,7 +82,7 @@ export function ProfilesScreen({ onBack, onLoad }: ProfilesScreenProps): React.J
       save({
         name: form.name.trim(),
         serviceId: form.serviceId.trim(),
-        environment: ENVIRONMENTS[form.envIndex] ?? "production",
+        environment: ENVIRONMENTS[form.envIndex] ?? "prod",
         defaultLinkingKeyPrefix: form.linkingKey.trim() || null,
       });
       setMode("list");

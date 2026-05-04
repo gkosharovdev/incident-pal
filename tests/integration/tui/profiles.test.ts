@@ -22,7 +22,7 @@ describe("Investigation profile CRUD", () => {
     const p = svc.save({
       name: "Production Order Service",
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       defaultLinkingKeyPrefix: "order",
     });
 
@@ -37,7 +37,7 @@ describe("Investigation profile CRUD", () => {
     svc.save({
       name: "My Profile",
       serviceId: "svc-a",
-      environment: "staging",
+      environment: "dev",
       defaultLinkingKeyPrefix: null,
     });
 
@@ -45,7 +45,7 @@ describe("Investigation profile CRUD", () => {
       svc.save({
         name: "My Profile",
         serviceId: "svc-b",
-        environment: "production",
+        environment: "prod",
         defaultLinkingKeyPrefix: null,
       }),
     ).toThrow(/already exists/);
@@ -57,7 +57,7 @@ describe("Investigation profile CRUD", () => {
     const original = svc.save({
       name: "Editable",
       serviceId: "svc",
-      environment: "staging",
+      environment: "dev",
       defaultLinkingKeyPrefix: null,
     });
 
@@ -66,7 +66,7 @@ describe("Investigation profile CRUD", () => {
       id: original.id,
       name: "Editable",
       serviceId: "svc-updated",
-      environment: "production",
+      environment: "prod",
       defaultLinkingKeyPrefix: "order",
     });
 
@@ -79,7 +79,7 @@ describe("Investigation profile CRUD", () => {
     svc.save({
       name: "Persistent",
       serviceId: "svc",
-      environment: "canary",
+      environment: "dev",
       defaultLinkingKeyPrefix: null,
     });
 

@@ -36,7 +36,7 @@ describe("[Structural Eval] Report structure", () => {
       investigationId: "inv-001",
       summary: {
         serviceId: "order-service",
-        environment: "production",
+        environment: "prod",
         linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
         timeWindow: { from: "2026-04-30T10:00:00Z", to: "2026-04-30T11:00:00Z" },
         defaultWindowApplied: false,
@@ -67,7 +67,7 @@ describe("[Structural Eval] Report structure", () => {
       investigationId: "inv-002",
       summary: {
         serviceId: "notification-service",
-        environment: "production",
+        environment: "prod",
         linkingKeys: [{ type: "http-correlation", value: "trace-abc" }],
         timeWindow: { from: "2026-04-30T10:00:00Z", to: "2026-04-30T11:00:00Z" },
         defaultWindowApplied: false,

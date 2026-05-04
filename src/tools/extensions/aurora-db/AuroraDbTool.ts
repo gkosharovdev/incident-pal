@@ -12,7 +12,7 @@ const BYTES_PER_ROW_ESTIMATE = 1024;
 
 const InputSchema = z.object({
   serviceId: z.string().min(1),
-  environment: z.enum(["production", "staging", "canary"]),
+  environment: z.enum(["prod", "dev"]),
   query: z.string().min(1),
   maxRows: z.number().positive().optional(),
 });
@@ -25,7 +25,7 @@ const INPUT_SCHEMA: JSONSchema7 = {
     serviceId: { type: "string", minLength: 1, description: "Service identifier (must exist in service catalog)" },
     environment: {
       type: "string",
-      enum: ["production", "staging", "canary"],
+      enum: ["prod", "dev"],
       description: "Target environment",
     },
     query: {

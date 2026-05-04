@@ -13,5 +13,5 @@
   "truncated": false,
   "queryExecutedMs": 12,
   "serviceId": "order-service",
-  "environment": "production"
+  "environment": "prod"
 }

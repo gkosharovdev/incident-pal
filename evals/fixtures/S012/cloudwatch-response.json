@@ -3,31 +3,31 @@
     {
       "timestamp": "2026-04-30T12:01:14Z",
       "message": "[ERROR] NullPointerException in PaymentProcessor.charge() at line 42 — amount is null for payment pay-5678",
-      "logStream": "/ecs/payment-service/production",
+      "logStream": "/ecs/payment-service/prod",
       "requestId": "req-abc-001"
     },
     {
       "timestamp": "2026-04-30T12:01:15Z",
       "message": "[ERROR] Payment pay-5678 failed: java.lang.NullPointerException: Cannot invoke method multiply() on null amount",
-      "logStream": "/ecs/payment-service/production",
+      "logStream": "/ecs/payment-service/prod",
       "requestId": "req-abc-001"
     },
     {
       "timestamp": "2026-04-30T12:01:16Z",
       "message": "[WARN] Retrying payment pay-5678 after error — attempt 2/3",
-      "logStream": "/ecs/payment-service/production",
+      "logStream": "/ecs/payment-service/prod",
       "requestId": "req-abc-002"
     },
     {
       "timestamp": "2026-04-30T12:01:18Z",
       "message": "[ERROR] NullPointerException in PaymentProcessor.charge() at line 42 — amount is null for payment pay-5678",
-      "logStream": "/ecs/payment-service/production",
+      "logStream": "/ecs/payment-service/prod",
       "requestId": "req-abc-002"
     },
     {
       "timestamp": "2026-04-30T12:01:20Z",
       "message": "[ERROR] Payment pay-5678 permanently failed after 3 attempts — marking as FAILED",
-      "logStream": "/ecs/payment-service/production",
+      "logStream": "/ecs/payment-service/prod",
       "requestId": "req-abc-003"
     }
   ],

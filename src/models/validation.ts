@@ -30,7 +30,7 @@ const timeWindowSchema = z
 
 export const investigationRequestSchema = z.object({
   serviceId: z.string().min(1),
-  environment: z.enum(["production", "staging", "canary"]),
+  environment: z.enum(["prod", "dev"]),
   linkingKeys: z.array(linkingKeySchema).min(1),
   timeWindow: timeWindowSchema.optional(),
   observationDescription: z.string().max(500).optional(),

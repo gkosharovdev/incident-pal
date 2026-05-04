@@ -38,7 +38,7 @@ describe("InvestigationFormScreen", () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         serviceId: "order-service",
-        environment: "production",
+        environment: "prod",
       }),
     );
   });

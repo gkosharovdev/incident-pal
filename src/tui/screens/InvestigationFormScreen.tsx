@@ -7,7 +7,7 @@ import type { InvestigationProfile } from "../services/InvestigationProfileServi
 
 type FormField = "service" | "environment" | "linking-key" | "description";
 
-const ENVIRONMENTS: Environment[] = ["production", "staging", "canary"];
+const ENVIRONMENTS: Environment[] = ["prod", "dev"];
 const FOCUS_ORDER: FormField[] = ["service", "environment", "linking-key", "description"];
 
 interface InvestigationFormScreenProps {
@@ -96,7 +96,7 @@ export function InvestigationFormScreen({
 }: InvestigationFormScreenProps): React.JSX.Element {
   const [serviceId, setServiceId] = useState(initialProfile?.serviceId ?? "");
   const [envIndex, setEnvIndex] = useState<number>(() => {
-    const idx = ENVIRONMENTS.indexOf(initialProfile?.environment ?? "production");
+    const idx = ENVIRONMENTS.indexOf(initialProfile?.environment ?? "prod");
     return idx >= 0 ? idx : 0;
   });
   const [linkingKey, setLinkingKey] = useState("");
@@ -104,7 +104,7 @@ export function InvestigationFormScreen({
   const [focusedField, setFocusedField] = useState<FormField>("service");
   const [profileIndex, setProfileIndex] = useState(-1);
 
-  const environment = ENVIRONMENTS[envIndex] ?? "production";
+  const environment = ENVIRONMENTS[envIndex] ?? "prod";
 
   const submit = (): void => {
     submitForm(serviceId, environment, linkingKey, description, onSubmit);

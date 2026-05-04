@@ -5,7 +5,7 @@ describe("[Structural Eval] Input validation", () => {
   it("rejects unknown service at schema level (empty serviceId)", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "http-correlation", value: "trace-1" }],
     });
     expect(result.success).toBe(false);
@@ -14,7 +14,7 @@ describe("[Structural Eval] Input validation", () => {
   it("rejects request with no linking keys", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [],
     });
     expect(result.success).toBe(false);
@@ -32,7 +32,7 @@ describe("[Structural Eval] Input validation", () => {
   it("accepts valid request with all three linking key types", () => {
     const result = investigationRequestSchema.safeParse({
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [
         { type: "entity-id", entityType: "order", value: "ord-1" },
         { type: "http-correlation", value: "trace-abc" },

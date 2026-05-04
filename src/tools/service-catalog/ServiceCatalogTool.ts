@@ -33,7 +33,7 @@ const INPUT_SCHEMA: JSONSchema7 = {
     serviceId: { type: "string", description: "Service identifier to look up" },
     environment: {
       type: "string",
-      enum: ["production", "staging", "canary"],
+      enum: ["prod", "dev"],
       description: "Target environment",
     },
   },

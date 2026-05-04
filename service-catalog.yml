@@ -3,11 +3,11 @@ services:
     repositoryUrl: https://github.com/example-org/order-service
     displayName: Order Service
     environments:
-      - production
-      - staging
+      - prod
+      - dev
     logGroups:
-      production: /ecs/order-service/production
-      staging: /ecs/order-service/staging
+      prod: /ecs/order-service/prod
+      dev: /ecs/order-service/dev
     ecsCluster: main-cluster
     linkingKeySchema:
       orderId: entity-id
@@ -17,14 +17,14 @@ services:
       - incorrect-status
       - payment-failure
     auroraDatabase:
-      production:
+      prod:
         host: order-service.cluster-prod-abc123.eu-west-1.rds.amazonaws.com
         port: 5432
         database: order_service_prod
         username: iam_investigation_user
         region: eu-west-1
         credentialSource: iam
-      staging:
+      dev:
         host: order-service-staging.cluster-stg-def456.eu-west-1.rds.amazonaws.com
         port: 5432
         database: order_service_staging
@@ -36,11 +36,11 @@ services:
     repositoryUrl: https://github.com/example-org/notification-service
     displayName: Notification Service
     environments:
-      - production
-      - staging
+      - prod
+      - dev
     logGroups:
-      production: /ecs/notification-service/production
-      staging: /ecs/notification-service/staging
+      prod: /ecs/notification-service/prod
+      dev: /ecs/notification-service/dev
     ecsCluster: main-cluster
     linkingKeySchema:
       customerId: entity-id
@@ -53,11 +53,11 @@ services:
     repositoryUrl: https://github.com/example-org/payment-service
     displayName: Payment Service
     environments:
-      - production
-      - staging
+      - prod
+      - dev
     logGroups:
-      production: /ecs/payment-service/production
-      staging: /ecs/payment-service/staging
+      prod: /ecs/payment-service/prod
+      dev: /ecs/payment-service/dev
     ecsCluster: main-cluster
     linkingKeySchema:
       paymentId: entity-id
@@ -66,14 +66,14 @@ services:
     observationTypes:
       - payment-failure
     auroraDatabase:
-      production:
+      prod:
         host: payment-service.cluster-prod-ghi789.eu-west-1.rds.amazonaws.com
         port: 5432
         database: payment_service_prod
         username: iam_investigation_user
         region: eu-west-1
         credentialSource: iam
-      staging:
+      dev:
         host: payment-service-staging.cluster-stg-jkl012.eu-west-1.rds.amazonaws.com
         port: 5432
         database: payment_service_staging
@@ -85,11 +85,11 @@ services:
     repositoryUrl: https://github.com/example-org/customer-service
     displayName: Customer Service
     environments:
-      - production
-      - staging
+      - prod
+      - dev
     logGroups:
-      production: /ecs/customer-service/production
-      staging: /ecs/customer-service/staging
+      prod: /ecs/customer-service/prod
+      dev: /ecs/customer-service/dev
     ecsCluster: main-cluster
     linkingKeySchema:
       customerId: entity-id
@@ -101,11 +101,11 @@ services:
     repositoryUrl: https://github.com/example-org/dispatch-service
     displayName: Dispatch Service
     environments:
-      - production
-      - staging
+      - prod
+      - dev
     logGroups:
-      production: /ecs/dispatch-service/production
-      staging: /ecs/dispatch-service/staging
+      prod: /ecs/dispatch-service/prod
+      dev: /ecs/dispatch-service/dev
     ecsCluster: main-cluster
     linkingKeySchema:
       orderId: entity-id

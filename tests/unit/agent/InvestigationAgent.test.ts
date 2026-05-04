@@ -5,7 +5,7 @@ import type { InvestigationRequest } from "../../../src/models/Investigation.js"
 
 const BASE_REQUEST: InvestigationRequest = {
   serviceId: "order-service",
-  environment: "production",
+  environment: "prod",
   linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
   timeWindow: {
     from: "2026-04-30T10:00:00Z",

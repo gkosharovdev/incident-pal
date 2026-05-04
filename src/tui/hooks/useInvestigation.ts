@@ -33,7 +33,7 @@ interface UseInvestigationResult {
 }
 
 const MOCK_ENTRIES: Array<{ type: TraceEntry["type"]; label: string; summary: string }> = [
-  { type: "investigation-started", label: "Started", summary: "investigating order-service / production" },
+  { type: "investigation-started", label: "Started", summary: "investigating order-service / prod" },
   { type: "tool-call", label: "Tool Call", summary: "cloudwatch-logs: querying /aws/ecs/my-service" },
   { type: "tool-call", label: "Tool Call", summary: "service-catalog: resolving my-service" },
   { type: "linking-key-discovered", label: "Key Found", summary: "entity-id: order:ord-12345" },

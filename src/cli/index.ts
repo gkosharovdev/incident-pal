@@ -46,8 +46,8 @@ function buildLinkingKeys(opts: InvestigateOpts): LinkingKey[] | string {
 
 function buildRequest(opts: InvestigateOpts, linkingKeys: LinkingKey[]): InvestigationRequest | string {
   const environment = opts.env as InvestigationRequest["environment"];
-  if (!["production", "staging", "canary"].includes(environment)) {
-    return `Invalid environment: ${opts.env}. Must be production, staging, or canary`;
+  if (!["prod", "dev"].includes(environment)) {
+    return `Invalid environment: ${opts.env}. Must be prod or dev`;
   }
   const request: InvestigationRequest = {
     serviceId: opts.service,
@@ -83,7 +83,7 @@ program
   .command("investigate")
   .description("Run a production investigation")
   .requiredOption("--service <serviceId>", "Service identifier (must exist in service catalog)")
-  .requiredOption("--env <environment>", "Target environment (production|staging|canary)")
+  .requiredOption("--env <environment>", "Target environment (prod|dev)")
   .option("--entity-id <type:id>", "Entity identifier in format type:id (e.g. order:ord-12345)")
   .option("--http-correlation-id <id>", "HTTP request correlation ID")
   .option("--kafka-message-id <id>", "Kafka message ID")

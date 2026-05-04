@@ -1,7 +1,7 @@
 import type { LinkingKey, LinkingKeySet } from "./LinkingKey.js";
 import type { Trace } from "./Trace.js";
 
-export type Environment = "production" | "staging" | "canary";
+export type Environment = "prod" | "dev";
 export type Confidence = "high" | "medium" | "low" | "unknown";
 export type InvestigationStatus =
   | "running"

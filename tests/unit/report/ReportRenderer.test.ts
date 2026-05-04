@@ -13,7 +13,7 @@ function makeInvestigation(overrides: Partial<Investigation> = {}): Investigatio
     id: "inv-test",
     request: {
       serviceId: "order-service",
-      environment: "production",
+      environment: "prod",
       linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
       timeWindow: {
         from: "2026-04-30T10:00:00Z",
@@ -62,7 +62,7 @@ describe("ReportRenderer", () => {
     const investigation = makeInvestigation({
       request: {
         serviceId: "payment-service",
-        environment: "production",
+        environment: "prod",
         linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
         timeWindow: { from: "2026-04-30T10:00:00Z", to: "2026-04-30T11:00:00Z" },
         observationDescription: desc,
@@ -85,7 +85,7 @@ describe("ReportRenderer", () => {
     const investigation = makeInvestigation({
       request: {
         serviceId: "order-service",
-        environment: "production",
+        environment: "prod",
         linkingKeys: [{ type: "entity-id", entityType: "order", value: "ord-1" }],
       },
     });
