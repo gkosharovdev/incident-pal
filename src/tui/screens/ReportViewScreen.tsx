@@ -39,7 +39,7 @@ export function ReportViewScreen({
     <Box flexDirection="column" height={termRows}>
       <Box justifyContent="space-between" paddingX={1}>
         <Text bold color="cyan">Investigation Report</Text>
-        <Text color="gray">Tab: switch sections  N: new  B: back to stream  ,: settings</Text>
+        <Text color="gray">Tab: switch sections  N: new  B: back to stream  Ctrl+S: settings</Text>
       </Box>
 
       <Box paddingX={1}>

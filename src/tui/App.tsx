@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Text, Box, useInput } from "ink";
+import type { Key } from "ink";
 import type { InvestigationRequest, Investigation } from "../models/index.js";
 import type { CredentialConfig } from "./services/KeychainService.js";
 import { KeychainService, KeychainUnavailableError } from "./services/KeychainService.js";
@@ -95,8 +96,8 @@ function AppScreens({ state, transition, keychainService }: AppScreensProps): Re
   const investigation = useInvestigation();
   const { profiles } = useProfiles();
 
-  useInput((_input) => {
-    handleGlobalShortcut(_input, state, transition);
+  useInput((input, key) => {
+    handleGlobalShortcut(input, key, state, transition);
   });
 
   return renderScreen(state, transition, saving, saveError, saveCredentials, investigation, profiles);
@@ -104,19 +105,20 @@ function AppScreens({ state, transition, keychainService }: AppScreensProps): Re
 
 function handleGlobalShortcut(
   input: string,
+  key: Key,
   state: AppState,
   transition: AppTransition,
 ): void {
   const blocked: ScreenState[] = ["checking-credentials", "keychain-error", "setup-wizard"];
   if (blocked.includes(state.screen)) return;
 
-  if (input === "," && state.screen !== "settings") {
+  if (key.ctrl && input === "s" && state.screen !== "settings") {
     const prior = state.screen === "investigation-form" || state.screen === "report-view"
       ? state.screen
       : state.priorScreen;
     transition({ screen: "settings", priorScreen: prior });
   }
-  if (input === "p" && state.screen === "investigation-form") {
+  if (key.ctrl && input === "p" && state.screen === "investigation-form") {
     transition({ screen: "profiles", priorScreen: "investigation-form" });
   }
 }

@@ -115,7 +115,7 @@ export function InvestigationFormScreen({
     <Box flexDirection="column" paddingX={2} paddingY={1}>
       <Box justifyContent="space-between">
         <Text bold color="cyan">New Investigation</Text>
-        <Text color="gray">, for settings  P for profiles</Text>
+        <Text color="gray">Ctrl+S: settings  Ctrl+P: profiles</Text>
       </Box>
       <Text> </Text>
 

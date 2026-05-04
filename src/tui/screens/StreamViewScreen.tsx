@@ -49,7 +49,7 @@ export function StreamViewScreen({
         <Text bold color="cyan">Live Investigation Stream</Text>
         <Text color="gray">
           {isTerminal
-            ? "Enter/R: view report  N: new  ,: settings"
+            ? "Enter/R: view report  N: new  Ctrl+S: settings"
             : "Running… (Ctrl+C to abort)"}
         </Text>
       </Box>

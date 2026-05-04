@@ -66,7 +66,8 @@ For running actual investigations headlessly, use the existing `incident-pal inv
 | `Esc` | Any screen | Cancel / go back |
 | `↑` / `↓` | Stream / Report | Scroll |
 | `s` | Report view | Save report to file |
-| `,` | Form / Report | Open Settings screen |
+| `Ctrl+S` | Form / Report / Stream | Open Settings screen |
+| `Ctrl+P` | Investigation form | Open Profiles screen |
 | `Ctrl+C` | Investigation running | Prompt to abort |
 | `Ctrl+C` | All other screens | Quit TUI |
 
