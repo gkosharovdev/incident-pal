@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction, RefObject } from "react";
+import { writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { fromIni } from "@aws-sdk/credential-providers";
 import { InvestigationAgent } from "../../agent/InvestigationAgent.js";
@@ -185,6 +187,7 @@ function runRealInvestigation(
 
   agent.investigate(request).then((result) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    writeInvestigationToDisk(result);
     setInvestigation(result);
     const statusMap: Record<string, InvestigationStatus> = {
       complete: "complete",
@@ -251,4 +254,27 @@ function formatAwsError(err: Error): string | null {
   if (!code && !meta) return null;
   const status = meta?.httpStatusCode ? ` (HTTP ${meta.httpStatusCode})` : "";
   return `AWS error${code ? ` ${code}` : ""}${status}: ${err.message}`;
+}
+
+function writeInvestigationToDisk(investigation: Investigation): void {
+  try {
+    mkdirSync("traces", { recursive: true });
+    const traceData = {
+      investigationId: investigation.id,
+      status: investigation.status,
+      entries: investigation.trace.getEntries(),
+    };
+    writeFileSync(
+      join("traces", `${investigation.id}.json`),
+      JSON.stringify(traceData, null, 2),
+    );
+    if (investigation.report) {
+      writeFileSync(
+        join("traces", `${investigation.id}.md`),
+        investigation.report.markdownContent,
+      );
+    }
+  } catch {
+    // Non-fatal: trace write failures must not crash the TUI
+  }
 }

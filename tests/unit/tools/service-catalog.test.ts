@@ -8,11 +8,11 @@ describe("ServiceCatalogTool", () => {
   const tool = new ServiceCatalogTool(CATALOG_PATH);
 
   it("returns service metadata for known service + env", async () => {
-    const result = await tool.invoke({ serviceId: "order-service", environment: "prod" });
+    const result = await tool.invoke({ serviceId: "booking-service", environment: "prod" });
     expect(result.success).toBe(true);
     const data = result.data as { serviceId: string; logGroup: string };
-    expect(data.serviceId).toBe("order-service");
-    expect(data.logGroup).toBe("/ecs/order-service/prod");
+    expect(data.serviceId).toBe("booking-service");
+    expect(data.logGroup).toBe("/ecs/booking-service/prod");
   });
 
   it("returns error for unknown service", async () => {
@@ -23,16 +23,16 @@ describe("ServiceCatalogTool", () => {
 
   it("returns error for unknown environment", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await tool.invoke({ serviceId: "order-service", environment: "canary" as any });
+    const result = await tool.invoke({ serviceId: "booking-service", environment: "canary" as any });
     expect(result.success).toBe(false);
     expect(result.error).toContain("canary");
   });
 
   it("exposes linkingKeySchema for the service", async () => {
-    const result = await tool.invoke({ serviceId: "order-service", environment: "prod" });
+    const result = await tool.invoke({ serviceId: "booking-service", environment: "prod" });
     expect(result.success).toBe(true);
     const data = result.data as { linkingKeySchema: Record<string, string> };
-    expect(data.linkingKeySchema["orderId"]).toBe("entity-id");
+    expect(data.linkingKeySchema["bookingId"]).toBe("entity-id");
   });
 
   it("resolve() returns null for unknown service", () => {
@@ -40,8 +40,8 @@ describe("ServiceCatalogTool", () => {
   });
 
   it("resolve() returns service for valid input", () => {
-    const resolved = tool.resolve("notification-service", "dev");
+    const resolved = tool.resolve("booking-service", "dev");
     expect(resolved).not.toBeNull();
-    expect(resolved?.logGroup).toBe("/ecs/notification-service/dev");
+    expect(resolved?.logGroup).toBe("/ecs/booking-service/dev");
   });
 });
