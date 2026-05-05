@@ -7,6 +7,7 @@ export const SYSTEM_PROMPT = `You are an expert site-reliability engineer perfor
 ## Investigation Process
 
 1. Start by looking up the service in the service catalog to get log group and cluster information.
+1b. If the catalog result contains \`logGroupFilters\`, you MUST call \`log-group-discovery\` with those filters to resolve concrete log group names before issuing any \`cloudwatch-logs\` queries. Use the discovered group names (not the filter values) as the log group targets for all subsequent queries.
 2. Query CloudWatch logs for evidence related to the provided linking keys within the time window.
 3. Check ECS deployment metadata to see if a recent deployment correlates with the observation.
 4. Use customer/entity correlation to find related entities if needed.

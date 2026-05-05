@@ -35,6 +35,7 @@ const EMPTY_METADATA: ReportMetadata = {
   toolCallsCount: 0,
   dataSourcesQueried: [],
   dataSourcesUnavailable: [],
+  logGroupsQueried: [],
   scanBytesUsed: 0,
   scanBudgetBytes: 1_073_741_824,
   resultsTruncated: false,

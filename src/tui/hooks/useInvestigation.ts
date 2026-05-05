@@ -8,6 +8,7 @@ import { InvestigationAgent } from "../../agent/InvestigationAgent.js";
 import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { CloudWatchLogsTool } from "../../tools/cloudwatch/CloudWatchLogsTool.js";
+import { LogGroupDiscoveryTool } from "../../tools/cloudwatch/LogGroupDiscoveryTool.js";
 import { EcsDeploymentTool } from "../../tools/ecs/EcsDeploymentTool.js";
 import { ServiceCatalogTool } from "../../tools/service-catalog/ServiceCatalogTool.js";
 import type { InvestigationRequest, Investigation, TraceEntry } from "../../models/index.js";
@@ -173,6 +174,7 @@ function runRealInvestigation(
   const agent = new InvestigationAgent({
     tools: [
       new CloudWatchLogsTool(cwClient),
+      new LogGroupDiscoveryTool(cwClient),
       new EcsDeploymentTool(ecsClient),
       new ServiceCatalogTool(catalogPath),
     ],

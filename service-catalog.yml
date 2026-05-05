@@ -5,9 +5,17 @@ services:
     environments:
       - prod
       - dev
-    logGroups:
-      prod: /ecs/booking-service/prod
-      dev: /ecs/booking-service/dev
+    logGroupFilters:
+      prod:
+        - type: prefix
+          value: /ecs/booking-service/prod
+        - type: pattern
+          value: booking-service
+      dev:
+        - type: prefix
+          value: /ecs/booking-service/dev
+        - type: pattern
+          value: booking-service
     ecsCluster: booking-service-dev
     linkingKeySchema:
       bookingId: entity-id
