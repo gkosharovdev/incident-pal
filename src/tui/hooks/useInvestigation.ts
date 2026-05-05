@@ -210,8 +210,17 @@ function formatAnthropicError(err: Error): string | null {
   if (err instanceof Anthropic.APIConnectionError) {
     const cause = (err as Error & { cause?: unknown }).cause;
     const sysErr = cause instanceof Error ? (cause as NodeJS.ErrnoException) : null;
-    const detail = sysErr ? `${sysErr.code ?? sysErr.message}: ${sysErr.message}` : err.message;
-    return `Anthropic API unreachable — ${detail}`;
+    // A TypeError here means the header value (API key) is malformed — never echo it
+    if (sysErr instanceof TypeError || sysErr?.message.includes("header")) {
+      return "ANTHROPIC_API_KEY is malformed — open Settings (Ctrl+S) and re-enter the key (must start with sk-ant-)";
+    }
+    // Use only the errno code; never include sysErr.message which can contain secrets
+    const code = sysErr?.code;
+    if (code === "ECONNREFUSED") return "Anthropic API unreachable — connection refused (api.anthropic.com:443)";
+    if (code === "ENOTFOUND")    return "Anthropic API unreachable — DNS lookup failed for api.anthropic.com";
+    if (code === "ETIMEDOUT")    return "Anthropic API unreachable — connection timed out";
+    if (code)                    return `Anthropic API unreachable — ${code}`;
+    return "Anthropic API unreachable — check network connectivity";
   }
   if (err instanceof Anthropic.AuthenticationError) {
     return "Anthropic API key rejected (401) — check ANTHROPIC_API_KEY";
