@@ -97,6 +97,24 @@ services:
     observationTypes:
       - data-discrepancy
 
+  - id: booking-service
+    repositoryUrl: https://github.com/example-org/booking-service
+    displayName: Booking Service
+    environments:
+      - prod
+      - dev
+    logGroups:
+      prod: /ecs/booking-service/prod
+      dev: /ecs/booking-service/dev
+    ecsCluster: main-cluster
+    linkingKeySchema:
+      bookingId: entity-id
+      orderId: entity-id
+      traceId: http-correlation
+    observationTypes:
+      - incorrect-status
+      - booking-failure
+
   - id: dispatch-service
     repositoryUrl: https://github.com/example-org/dispatch-service
     displayName: Dispatch Service

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction, RefObject } from "react";
 import Anthropic from "@anthropic-ai/sdk";
+import { fromIni } from "@aws-sdk/credential-providers";
 import { InvestigationAgent } from "../../agent/InvestigationAgent.js";
 import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
 import { ECSClient } from "@aws-sdk/client-ecs";
@@ -162,8 +163,9 @@ function runRealInvestigation(
   timerRef: RefObject<ReturnType<typeof setInterval> | null>,
 ): void {
   const region = process.env["AWS_REGION"] ?? "us-east-1";
-  const cwClient = new CloudWatchLogsClient({ region });
-  const ecsClient = new ECSClient({ region });
+  const awsCredentials = fromIni({ profile: credentials.awsProfile });
+  const cwClient = new CloudWatchLogsClient({ region, credentials: awsCredentials });
+  const ecsClient = new ECSClient({ region, credentials: awsCredentials });
   const catalogPath = process.env["SERVICE_CATALOG_PATH"] ?? "./service-catalog.yml";
 
   const agent = new InvestigationAgent({
