@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import type { Dispatch, SetStateAction, RefObject } from "react";
+import Anthropic from "@anthropic-ai/sdk";
 import { InvestigationAgent } from "../../agent/InvestigationAgent.js";
 import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { CloudWatchLogsTool } from "../../tools/cloudwatch/CloudWatchLogsTool.js";
 import { EcsDeploymentTool } from "../../tools/ecs/EcsDeploymentTool.js";
 import { ServiceCatalogTool } from "../../tools/service-catalog/ServiceCatalogTool.js";
-import Anthropic from "@anthropic-ai/sdk";
 import type { InvestigationRequest, Investigation, TraceEntry } from "../../models/index.js";
 import type { CredentialConfig } from "../services/KeychainService.js";
 
@@ -192,7 +192,52 @@ function runRealInvestigation(
     setStatus(statusMap[result.status] ?? "complete");
   }).catch((err: unknown) => {
     if (timerRef.current) clearInterval(timerRef.current);
-    setError(String(err));
+    setError(formatAgentError(err));
     setStatus("error");
   });
+}
+
+function formatAgentError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  return formatAnthropicError(err) ?? formatAwsError(err) ?? (err.message || String(err));
+}
+
+// eslint-disable-next-line complexity
+function formatAnthropicError(err: Error): string | null {
+  if (err instanceof Anthropic.APIConnectionTimeoutError) {
+    return "Anthropic API request timed out — the model did not respond in time";
+  }
+  if (err instanceof Anthropic.APIConnectionError) {
+    const cause = (err as Error & { cause?: unknown }).cause;
+    const sysErr = cause instanceof Error ? (cause as NodeJS.ErrnoException) : null;
+    const detail = sysErr ? `${sysErr.code ?? sysErr.message}: ${sysErr.message}` : err.message;
+    return `Anthropic API unreachable — ${detail}`;
+  }
+  if (err instanceof Anthropic.AuthenticationError) {
+    return "Anthropic API key rejected (401) — check ANTHROPIC_API_KEY";
+  }
+  if (err instanceof Anthropic.PermissionDeniedError) {
+    return "Anthropic API access denied (403) — check your API key permissions";
+  }
+  if (err instanceof Anthropic.RateLimitError) {
+    return "Anthropic API rate limit exceeded (429) — retry after a moment";
+  }
+  if (err instanceof Anthropic.InternalServerError) {
+    const reqId = (err as { request_id?: string }).request_id;
+    return `Anthropic API internal error (500)${reqId ? ` — request_id: ${reqId}` : ""}`;
+  }
+  if (err instanceof Anthropic.APIError) {
+    const status = (err as { status?: number }).status;
+    return `Anthropic API error ${status ?? "unknown"}: ${err.message}`;
+  }
+  return null;
+}
+
+function formatAwsError(err: Error): string | null {
+  const raw = err as unknown as Record<string, unknown>;
+  const code = (raw["Code"] ?? raw["code"]) as string | undefined;
+  const meta = raw["$metadata"] as { httpStatusCode?: number } | undefined;
+  if (!code && !meta) return null;
+  const status = meta?.httpStatusCode ? ` (HTTP ${meta.httpStatusCode})` : "";
+  return `AWS error${code ? ` ${code}` : ""}${status}: ${err.message}`;
 }
