@@ -1,104 +1,6 @@
 services:
-  - id: order-service
-    repositoryUrl: https://github.com/example-org/order-service
-    displayName: Order Service
-    environments:
-      - prod
-      - dev
-    logGroups:
-      prod: /ecs/order-service/prod
-      dev: /ecs/order-service/dev
-    ecsCluster: main-cluster
-    linkingKeySchema:
-      orderId: entity-id
-      traceId: http-correlation
-      messageId: kafka-message-id
-    observationTypes:
-      - incorrect-status
-      - payment-failure
-    auroraDatabase:
-      prod:
-        host: order-service.cluster-prod-abc123.eu-west-1.rds.amazonaws.com
-        port: 5432
-        database: order_service_prod
-        username: iam_investigation_user
-        region: eu-west-1
-        credentialSource: iam
-      dev:
-        host: order-service-staging.cluster-stg-def456.eu-west-1.rds.amazonaws.com
-        port: 5432
-        database: order_service_staging
-        username: iam_investigation_user
-        region: eu-west-1
-        credentialSource: iam
-
-  - id: notification-service
-    repositoryUrl: https://github.com/example-org/notification-service
-    displayName: Notification Service
-    environments:
-      - prod
-      - dev
-    logGroups:
-      prod: /ecs/notification-service/prod
-      dev: /ecs/notification-service/dev
-    ecsCluster: main-cluster
-    linkingKeySchema:
-      customerId: entity-id
-      traceId: http-correlation
-      notificationId: kafka-message-id
-    observationTypes:
-      - notification-failure
-
-  - id: payment-service
-    repositoryUrl: https://github.com/example-org/payment-service
-    displayName: Payment Service
-    environments:
-      - prod
-      - dev
-    logGroups:
-      prod: /ecs/payment-service/prod
-      dev: /ecs/payment-service/dev
-    ecsCluster: main-cluster
-    linkingKeySchema:
-      paymentId: entity-id
-      orderId: entity-id
-      traceId: http-correlation
-    observationTypes:
-      - payment-failure
-    auroraDatabase:
-      prod:
-        host: payment-service.cluster-prod-ghi789.eu-west-1.rds.amazonaws.com
-        port: 5432
-        database: payment_service_prod
-        username: iam_investigation_user
-        region: eu-west-1
-        credentialSource: iam
-      dev:
-        host: payment-service-staging.cluster-stg-jkl012.eu-west-1.rds.amazonaws.com
-        port: 5432
-        database: payment_service_staging
-        username: iam_investigation_user
-        region: eu-west-1
-        credentialSource: iam
-
-  - id: customer-service
-    repositoryUrl: https://github.com/example-org/customer-service
-    displayName: Customer Service
-    environments:
-      - prod
-      - dev
-    logGroups:
-      prod: /ecs/customer-service/prod
-      dev: /ecs/customer-service/dev
-    ecsCluster: main-cluster
-    linkingKeySchema:
-      customerId: entity-id
-      traceId: http-correlation
-    observationTypes:
-      - data-discrepancy
-
   - id: booking-service
-    repositoryUrl: https://github.com/example-org/booking-service
+    repositoryUrl: https://github.com/gkosharovdev/booking-service
     displayName: Booking Service
     environments:
       - prod
@@ -106,7 +8,7 @@ services:
     logGroups:
       prod: /ecs/booking-service/prod
       dev: /ecs/booking-service/dev
-    ecsCluster: main-cluster
+    ecsCluster: booking-service-dev
     linkingKeySchema:
       bookingId: entity-id
       orderId: entity-id
@@ -114,21 +16,5 @@ services:
     observationTypes:
       - incorrect-status
       - booking-failure
-
-  - id: dispatch-service
-    repositoryUrl: https://github.com/example-org/dispatch-service
-    displayName: Dispatch Service
-    environments:
-      - prod
-      - dev
-    logGroups:
-      prod: /ecs/dispatch-service/prod
-      dev: /ecs/dispatch-service/dev
-    ecsCluster: main-cluster
-    linkingKeySchema:
-      orderId: entity-id
-      messageId: kafka-message-id
-      traceId: http-correlation
-    observationTypes:
-      - incorrect-status
-      - notification-failure
+      - data-quality-issue
+      - infrastructural-issue

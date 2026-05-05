@@ -29,7 +29,10 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git rm *)",
-      "Bash(node --trace-deprecation -e \"import\\('./dist/cli/index.js'\\)\")"
+      "Bash(node --trace-deprecation -e \"import\\('./dist/cli/index.js'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node --input-type=module)",
+      "Bash(node -e \"require\\('@aws-sdk/credential-providers'\\); console.log\\('available'\\)\")"
     ]
   }
 }
