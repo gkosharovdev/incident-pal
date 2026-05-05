@@ -30,11 +30,13 @@ export function StreamEntryRow({ entry, isLast = false }: StreamEntryProps): Rea
     hour12: false,
   });
 
+  const isError = entry.eventType === "tool-error" || entry.eventType === "tool-unavailable";
+
   return (
     <Box>
       <Text color="gray">{time} </Text>
-      <Text color={color}>[{entry.label.padEnd(16)}]</Text>
-      <Text> {entry.summary}</Text>
+      <Text color={color} bold={isError}>[{entry.label.padEnd(16)}]</Text>
+      <Text bold={isError}> {entry.summary}</Text>
       {isLast && <Text color="gray"> ●</Text>}
     </Box>
   );

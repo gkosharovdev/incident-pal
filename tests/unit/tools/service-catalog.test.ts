@@ -22,7 +22,7 @@ describe("ServiceCatalogTool", () => {
   });
 
   it("returns error for unknown environment", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await tool.invoke({ serviceId: "order-service", environment: "canary" as any });
     expect(result.success).toBe(false);
     expect(result.error).toContain("canary");

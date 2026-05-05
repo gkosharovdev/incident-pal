@@ -239,6 +239,7 @@ function renderStreamView(
       elapsedMs={inv.elapsedMs}
       budgetPct={inv.budgetPct}
       investigation={inv.investigation}
+      error={inv.error}
       onViewReport={(result) => { transition({ screen: "report-view", investigation: result }); }}
       onNewInvestigation={() => { transition({ screen: "investigation-form", investigation: null }); }}
     />
