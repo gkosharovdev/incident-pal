@@ -1,0 +1,33 @@
+services:
+  - id: alpha-service
+    repositoryUrl: https://github.com/test-org/alpha-service
+    displayName: Alpha Service
+    environments:
+      - prod
+      - dev
+    logGroups:
+      prod: /ecs/alpha-service/prod
+      dev: /ecs/alpha-service/dev
+    ecsCluster: alpha-cluster
+    linkingKeySchema:
+      orderId: entity-id
+      traceId: http-correlation
+      messageId: kafka-message-id
+    observationTypes:
+      - incorrect-status
+
+  - id: beta-service
+    repositoryUrl: https://github.com/test-org/beta-service
+    displayName: Beta Service
+    environments:
+      - prod
+      - dev
+    logGroups:
+      prod: /ecs/beta-service/prod
+      dev: /ecs/beta-service/dev
+    ecsCluster: beta-cluster
+    linkingKeySchema:
+      customerId: entity-id
+      traceId: http-correlation
+    observationTypes:
+      - notification-failure
