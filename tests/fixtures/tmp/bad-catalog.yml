@@ -1,0 +1,11 @@
+
+services:
+  - id: bad-service
+    displayName: Bad Service
+    environments: [prod]
+    logGroupFilters:
+      prod:
+        - type: unknown-type
+          value: /some/group
+    ecsCluster: c
+    linkingKeySchema: {}

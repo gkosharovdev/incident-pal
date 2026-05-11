@@ -8,12 +8,12 @@ services:
     logGroupFilters:
       prod:
         - type: prefix
-          value: /ecs/booking-service/prod
+          value: /ecs/booking-service
         - type: pattern
           value: booking-service
       dev:
         - type: prefix
-          value: /ecs/booking-service/dev
+          value: /ecs/booking-service
         - type: pattern
           value: booking-service
     ecsCluster: booking-service-dev
