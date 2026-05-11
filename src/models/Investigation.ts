@@ -89,6 +89,7 @@ export interface ReportMetadata {
   toolCallsCount: number;
   dataSourcesQueried: string[];
   dataSourcesUnavailable: string[];
+  logGroupsQueried: string[];
   scanBytesUsed: number;
   scanBudgetBytes: number;
   resultsTruncated: boolean;

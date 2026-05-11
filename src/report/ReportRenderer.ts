@@ -217,6 +217,14 @@ export class ReportRenderer {
     if (metadata.dataSourcesUnavailable.length > 0) {
       lines.push(`- **Data sources unavailable**: ${metadata.dataSourcesUnavailable.join(", ")}`);
     }
+    if (metadata.logGroupsQueried.length > 0) {
+      lines.push("- **Log groups queried**:");
+      for (const group of metadata.logGroupsQueried) {
+        lines.push(`  - ${group}`);
+      }
+    } else {
+      lines.push("- **Log groups queried**: none discovered via log-group-discovery (check filter configuration)");
+    }
     lines.push(
       `- **Scan budget used**: ${this.formatBytes(metadata.scanBytesUsed)} / ${this.formatBytes(metadata.scanBudgetBytes)}`,
     );

@@ -1,0 +1,7 @@
+
+services:
+  - id: empty-service
+    displayName: Empty Service
+    environments: [prod]
+    ecsCluster: c
+    linkingKeySchema: {}

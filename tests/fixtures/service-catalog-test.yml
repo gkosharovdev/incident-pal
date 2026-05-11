@@ -5,9 +5,16 @@ services:
     environments:
       - prod
       - dev
-    logGroups:
-      prod: /ecs/alpha-service/prod
-      dev: /ecs/alpha-service/dev
+    logGroupFilters:
+      prod:
+        - type: prefix
+          value: /ecs/alpha-service/prod
+        - type: pattern
+          value: alpha-service
+      dev:
+        - type: prefix
+          value: /ecs/alpha-service/dev
+    maxLogGroups: 20
     ecsCluster: alpha-cluster
     linkingKeySchema:
       orderId: entity-id

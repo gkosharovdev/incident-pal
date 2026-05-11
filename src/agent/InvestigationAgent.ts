@@ -352,6 +352,14 @@ export class InvestigationAgent {
           .map((e) => e.toolName as string),
       )],
       dataSourcesUnavailable: [...new Set(dataSourcesUnavailable)],
+      logGroupsQueried: [...new Set(
+        trace.getEntries()
+          .filter((e) => e.type === "tool-call" && e.toolName === "log-group-discovery" && e.output)
+          .flatMap((e) => {
+            const output = e.output as { groups?: Array<{ name: string }> } | null;
+            return output?.groups?.map((g) => g.name) ?? [];
+          }),
+      )],
       scanBytesUsed: budget.used,
       scanBudgetBytes: budget.budgetBytes,
       resultsTruncated,

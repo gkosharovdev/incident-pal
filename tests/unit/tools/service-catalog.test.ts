@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { join } from "node:path";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { ServiceCatalogTool } from "../../../src/tools/service-catalog/ServiceCatalogTool.js";
+import type { LogGroupFilter } from "../../../src/tools/service-catalog/ServiceCatalogTool.js";
 
 const CATALOG_PATH = join(process.cwd(), "tests/fixtures/service-catalog-test.yml");
 
@@ -56,5 +58,81 @@ describe("ServiceCatalogTool", () => {
     const resolved = tool.resolve("beta-service", "prod");
     expect(resolved?.linkingKeySchema["customerId"]).toBe("entity-id");
     expect(resolved?.linkingKeySchema["traceId"]).toBe("http-correlation");
+  });
+
+  // logGroupFilters coverage (T007)
+  it("returns logGroupFilters for a logGroupFilters-based catalog entry", async () => {
+    const result = await tool.invoke({ serviceId: "alpha-service", environment: "prod" });
+    expect(result.success).toBe(true);
+    const data = result.data as { logGroupFilters: LogGroupFilter[]; maxLogGroups: number };
+    expect(Array.isArray(data.logGroupFilters)).toBe(true);
+    expect(data.logGroupFilters.length).toBeGreaterThanOrEqual(1);
+    expect(data.logGroupFilters[0]?.type).toBe("prefix");
+    expect(data.logGroupFilters[0]?.value).toBe("/ecs/alpha-service/prod");
+  });
+
+  it("synthesises a prefix filter from legacy logGroups entry", async () => {
+    const result = await tool.invoke({ serviceId: "beta-service", environment: "prod" });
+    expect(result.success).toBe(true);
+    const data = result.data as { logGroupFilters: LogGroupFilter[] };
+    expect(data.logGroupFilters).toHaveLength(1);
+    expect(data.logGroupFilters[0]).toEqual({ type: "prefix", value: "/ecs/beta-service/prod" });
+  });
+
+  it("defaults maxLogGroups to 50 when not set", async () => {
+    const result = await tool.invoke({ serviceId: "beta-service", environment: "prod" });
+    expect(result.success).toBe(true);
+    const data = result.data as { maxLogGroups: number };
+    expect(data.maxLogGroups).toBe(50);
+  });
+
+  it("uses explicit maxLogGroups when set", async () => {
+    const result = await tool.invoke({ serviceId: "alpha-service", environment: "prod" });
+    expect(result.success).toBe(true);
+    const data = result.data as { maxLogGroups: number };
+    expect(data.maxLogGroups).toBe(20);
+  });
+
+  it("resolve() includes logGroupFilters in result", () => {
+    const resolved = tool.resolve("alpha-service", "dev");
+    expect(resolved?.logGroupFilters).toBeDefined();
+    expect(resolved?.logGroupFilters.length).toBeGreaterThanOrEqual(1);
+    expect(resolved?.logGroupFilters[0]?.type).toBe("prefix");
+  });
+
+  it("throws INVALID_FILTER_TYPE at load time for bad filter type", () => {
+    const tmpDir = join(process.cwd(), "tests/fixtures/tmp");
+    mkdirSync(tmpDir, { recursive: true });
+    const badCatalog = `
+services:
+  - id: bad-service
+    displayName: Bad Service
+    environments: [prod]
+    logGroupFilters:
+      prod:
+        - type: unknown-type
+          value: /some/group
+    ecsCluster: c
+    linkingKeySchema: {}
+`;
+    const tmpPath = join(tmpDir, "bad-catalog.yml");
+    writeFileSync(tmpPath, badCatalog);
+    expect(() => new ServiceCatalogTool(tmpPath)).toThrow("INVALID_FILTER_TYPE");
+  });
+
+  it("throws MISSING_LOG_GROUP_CONFIG at load time when neither field present", () => {
+    const tmpDir = join(process.cwd(), "tests/fixtures/tmp");
+    mkdirSync(tmpDir, { recursive: true });
+    const badCatalog = `
+services:
+  - id: empty-service
+    displayName: Empty Service
+    environments: [prod]
+    ecsCluster: c
+    linkingKeySchema: {}
+`;
+    const tmpPath = join(tmpDir, "empty-catalog.yml");
+    writeFileSync(tmpPath, badCatalog);
+    expect(() => new ServiceCatalogTool(tmpPath)).toThrow("MISSING_LOG_GROUP_CONFIG");
   });
 });

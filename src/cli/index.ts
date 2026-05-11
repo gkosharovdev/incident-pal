@@ -6,6 +6,7 @@ import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
 import { ECSClient } from "@aws-sdk/client-ecs";
 import { InvestigationAgent } from "../agent/InvestigationAgent.js";
 import { CloudWatchLogsTool } from "../tools/cloudwatch/CloudWatchLogsTool.js";
+import { LogGroupDiscoveryTool } from "../tools/cloudwatch/LogGroupDiscoveryTool.js";
 import { EcsDeploymentTool } from "../tools/ecs/EcsDeploymentTool.js";
 import { ServiceCatalogTool } from "../tools/service-catalog/ServiceCatalogTool.js";
 import type { LinkingKey, InvestigationRequest } from "../models/index.js";
@@ -107,9 +108,11 @@ program
     const region = process.env["AWS_REGION"] ?? "us-east-1";
     const catalogPath = process.env["SERVICE_CATALOG_PATH"] ?? join(process.cwd(), "service-catalog.yml");
 
+    const cwClient = new CloudWatchLogsClient({ region });
     const agent = new InvestigationAgent({
       tools: [
-        new CloudWatchLogsTool(new CloudWatchLogsClient({ region })),
+        new CloudWatchLogsTool(cwClient),
+        new LogGroupDiscoveryTool(cwClient),
         new EcsDeploymentTool(new ECSClient({ region })),
         new ServiceCatalogTool(catalogPath),
       ],
