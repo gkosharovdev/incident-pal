@@ -9,7 +9,7 @@
   },
   "input": {
     "serviceId": "order-service",
-    "environment": "production",
+    "environment": "prod",
     "linkingKeys": [
       { "type": "entity-id", "entityType": "order", "value": "ord-9876" }
     ],

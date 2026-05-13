@@ -1,9 +1,7 @@
-import {
-  CloudWatchLogsClient,
-  DescribeLogGroupsCommand,
-} from "@aws-sdk/client-cloudwatch-logs";
 import type { Tool, ToolResult } from "../../models/Tool.js";
 import type { JSONSchema7 } from "../../models/JSONSchema.js";
+import type { AwsToolkitClient } from "./AwsToolkitClient.js";
+import { AwsToolkitError } from "./AwsToolkitClient.js";
 import type { LogGroupFilter } from "../service-catalog/ServiceCatalogTool.js";
 
 const DEFAULT_MAX_GROUPS = 50;
@@ -25,6 +23,11 @@ interface DiscoverySuccess {
   capped: boolean;
   totalFound: number;
   warning?: string;
+}
+
+interface DiscoveryInput {
+  filters: LogGroupFilter[];
+  maxGroups?: number;
 }
 
 const INPUT_SCHEMA: JSONSchema7 = {
@@ -49,25 +52,41 @@ const INPUT_SCHEMA: JSONSchema7 = {
   additionalProperties: false,
 };
 
-interface DiscoveryInput {
-  filters: LogGroupFilter[];
-  maxGroups?: number;
+interface AwsLogGroup {
+  logGroupName?: string;
+  storedBytes?: number;
+}
+
+interface DescribeLogGroupsResponse {
+  logGroups?: AwsLogGroup[];
+  NextToken?: string;
 }
 
 function awsErrorCode(err: unknown): string | undefined {
-  const raw = err as Record<string, unknown>;
+  const raw = err instanceof AwsToolkitError ? err : (err as Record<string, unknown>);
+  if (raw instanceof AwsToolkitError) {
+    const match = /(\w+Exception|\w+Error|AccessDenied|ResourceNotFoundException)/.exec(
+      raw.message,
+    );
+    return match?.[1];
+  }
   return (raw["Code"] ?? raw["name"] ?? raw["__type"]) as string | undefined;
 }
 
-export class LogGroupDiscoveryTool implements Tool {
+type FilterResult =
+  | { type: "ok"; found: number }
+  | { type: "warning"; message: string }
+  | { type: "error"; message: string };
+
+export class LogGroupDiscoveryToolV2 implements Tool {
   readonly name = "log-group-discovery";
   readonly description =
     "Resolve log group filter expressions to concrete CloudWatch log group names. Call this after service-catalog to discover all log groups relevant to a service before issuing cloudwatch-logs queries.";
   readonly inputSchema = INPUT_SCHEMA;
 
-  private readonly client: CloudWatchLogsClient;
+  private readonly client: AwsToolkitClient;
 
-  constructor(client: CloudWatchLogsClient) {
+  constructor(client: AwsToolkitClient) {
     this.client = client;
   }
 
@@ -87,7 +106,12 @@ export class LogGroupDiscoveryTool implements Tool {
         return { success: false, data: null, error: result.message };
       }
       if (result.type === "warning") {
-        const data: DiscoverySuccess = { groups, capped, totalFound: groups.length, warning: result.message };
+        const data: DiscoverySuccess = {
+          groups,
+          capped,
+          totalFound: groups.length,
+          warning: result.message,
+        };
         return { success: true, data, error: null };
       }
       totalFound += result.found;
@@ -100,30 +124,15 @@ export class LogGroupDiscoveryTool implements Tool {
     return { success: true, data, error: null, truncated: capped };
   }
 
-  private buildCommand(filter: LogGroupFilter, nextToken: string | undefined): DescribeLogGroupsCommand {
-    return new DescribeLogGroupsCommand(
-      filter.type === "prefix"
-        ? { logGroupNamePrefix: filter.value, nextToken, limit: 50 }
-        : { logGroupNamePattern: filter.value, nextToken, limit: 50 },
-    );
-  }
-
-  private collectPage(
-    logGroups: Array<{ logGroupName?: string | undefined }>,
-    filter: LogGroupFilter,
-    cap: number,
-    seen: Set<string>,
-    groups: DiscoveredGroup[],
-  ): { found: number; capped: boolean } {
-    let found = 0;
-    for (const lg of logGroups) {
-      if (!lg.logGroupName || seen.has(lg.logGroupName)) continue;
-      seen.add(lg.logGroupName);
-      groups.push({ name: lg.logGroupName, filter });
-      found++;
-      if (groups.length >= cap) return { found, capped: true };
+  private handleDiscoveryError(err: unknown, filter: LogGroupFilter): FilterResult {
+    const code = awsErrorCode(err);
+    if (code && GRACEFUL_AWS_CODES.has(code)) {
+      return {
+        type: "warning",
+        message: `DescribeLogGroups access denied (${code}) — discovery skipped for filter ${filter.type}:${filter.value}`,
+      };
     }
-    return { found, capped: false };
+    return { type: "error", message: `DescribeLogGroups failed: ${String(err)}` };
   }
 
   private async discoverForFilter(
@@ -131,26 +140,37 @@ export class LogGroupDiscoveryTool implements Tool {
     cap: number,
     seen: Set<string>,
     groups: DiscoveredGroup[],
-  ): Promise<{ type: "ok"; found: number } | { type: "warning"; message: string } | { type: "error"; message: string }> {
+  ): Promise<FilterResult> {
     let nextToken: string | undefined;
     let found = 0;
 
     do {
-      let response;
+      const params: Record<string, unknown> =
+        filter.type === "prefix"
+          ? { LogGroupNamePrefix: filter.value, Limit: 50 }
+          : { LogGroupNamePattern: filter.value, Limit: 50 };
+      if (nextToken) params["NextToken"] = nextToken;
+
+      let response: DescribeLogGroupsResponse;
       try {
-        response = await this.client.send(this.buildCommand(filter, nextToken));
+        const result = await this.client.callAws<DescribeLogGroupsResponse>(
+          "cloudwatch-logs",
+          "DescribeLogGroups",
+          params,
+        );
+        response = result.body;
       } catch (err) {
-        const code = awsErrorCode(err);
-        if (code && GRACEFUL_AWS_CODES.has(code)) {
-          return { type: "warning", message: `DescribeLogGroups access denied (${code}) — discovery skipped for filter ${filter.type}:${filter.value}` };
-        }
-        return { type: "error", message: `DescribeLogGroups failed: ${String(err)}` };
+        return this.handleDiscoveryError(err, filter);
       }
 
-      const page = this.collectPage(response.logGroups ?? [], filter, cap, seen, groups);
-      found += page.found;
-      if (page.capped) return { type: "ok", found };
-      nextToken = response.nextToken;
+      for (const lg of response.logGroups ?? []) {
+        if (!lg.logGroupName || seen.has(lg.logGroupName)) continue;
+        seen.add(lg.logGroupName);
+        groups.push({ name: lg.logGroupName, filter });
+        found++;
+        if (groups.length >= cap) return { type: "ok", found };
+      }
+      nextToken = response.NextToken;
     } while (nextToken);
 
     return { type: "ok", found };

@@ -1,6 +1,7 @@
-import { ECSClient, DescribeServicesCommand } from "@aws-sdk/client-ecs";
 import type { Tool, ToolResult } from "../../models/Tool.js";
 import type { JSONSchema7 } from "../../models/JSONSchema.js";
+import type { AwsToolkitClient } from "./AwsToolkitClient.js";
+import { AwsToolkitError } from "./AwsToolkitClient.js";
 
 const INPUT_SCHEMA: JSONSchema7 = {
   type: "object",
@@ -13,6 +14,13 @@ const INPUT_SCHEMA: JSONSchema7 = {
   required: ["clusterName", "serviceName", "from", "to"],
   additionalProperties: false,
 };
+
+interface EcsInput {
+  clusterName: string;
+  serviceName: string;
+  from: string;
+  to: string;
+}
 
 interface DeploymentRecord {
   deploymentId: string;
@@ -32,22 +40,35 @@ interface EcsResult {
   currentDesiredCount: number;
 }
 
-interface EcsInput {
-  clusterName: string;
-  serviceName: string;
-  from: string;
-  to: string;
+interface AwsDeployment {
+  id?: string;
+  status?: string;
+  taskDefinition?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  runningCount?: number;
+  desiredCount?: number;
 }
 
-export class EcsDeploymentTool implements Tool {
+interface AwsService {
+  runningCount?: number;
+  desiredCount?: number;
+  deployments?: AwsDeployment[];
+}
+
+interface DescribeServicesResponse {
+  services?: AwsService[];
+}
+
+export class EcsDeploymentToolV2 implements Tool {
   readonly name = "ecs-deployment";
   readonly description =
     "Retrieve ECS deployment metadata for a service within a time window. Returns deployment events, task definition versions, and current running/desired counts. Useful for correlating deployments with observed issues.";
   readonly inputSchema = INPUT_SCHEMA;
 
-  private readonly client: ECSClient;
+  private readonly client: AwsToolkitClient;
 
-  constructor(client: ECSClient) {
+  constructor(client: AwsToolkitClient) {
     this.client = client;
   }
 
@@ -57,14 +78,13 @@ export class EcsDeploymentTool implements Tool {
     const toMs = new Date(params.to).getTime();
 
     try {
-      const response = await this.client.send(
-        new DescribeServicesCommand({
-          cluster: params.clusterName,
-          services: [params.serviceName],
-        }),
+      const result = await this.client.callAws<DescribeServicesResponse>(
+        "ecs",
+        "DescribeServices",
+        { cluster: params.clusterName, services: [params.serviceName] },
       );
 
-      const service = response.services?.[0];
+      const service = result.body.services?.[0];
       if (!service) {
         return {
           success: false,
@@ -83,13 +103,13 @@ export class EcsDeploymentTool implements Tool {
           deploymentId: d.id ?? "",
           status: d.status ?? "UNKNOWN",
           taskDefinition: d.taskDefinition ?? "",
-          createdAt: d.createdAt?.toISOString() ?? "",
-          updatedAt: d.updatedAt?.toISOString() ?? "",
+          createdAt: d.createdAt ?? "",
+          updatedAt: d.updatedAt ?? "",
           runningCount: d.runningCount ?? 0,
           desiredCount: d.desiredCount ?? 0,
         }));
 
-      const result: EcsResult = {
+      const data: EcsResult = {
         serviceName: params.serviceName,
         clusterName: params.clusterName,
         deploymentsInWindow,
@@ -97,12 +117,12 @@ export class EcsDeploymentTool implements Tool {
         currentDesiredCount: service.desiredCount ?? 0,
       };
 
-      return { success: true, data: result, error: null };
+      return { success: true, data, error: null };
     } catch (err) {
       return {
         success: false,
         data: null,
-        error: `ECS DescribeServices failed: ${String(err)}`,
+        error: `ECS DescribeServices failed: ${err instanceof AwsToolkitError ? err.message : String(err)}`,
       };
     }
   }
