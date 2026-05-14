@@ -26,10 +26,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@aws-sdk/client-cloudwatch-logs": "^3.782.0",
-    "@aws-sdk/client-ecs": "^3.782.0",
     "@aws-sdk/rds-signer": "^3.1040.0",
     "@aws-sdk/shared-ini-file-loader": "^3.370.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@octokit/rest": "^21.0.0",
     "commander": "^13.1.0",
     "js-yaml": "^4.1.0",

@@ -32,7 +32,21 @@
       "Bash(node --trace-deprecation -e \"import\\('./dist/cli/index.js'\\)\")",
       "Bash(node -e ' *)",
       "Bash(node --input-type=module)",
-      "Bash(node -e \"require\\('@aws-sdk/credential-providers'\\); console.log\\('available'\\)\")"
+      "Bash(node -e \"require\\('@aws-sdk/credential-providers'\\); console.log\\('available'\\)\")",
+      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh --json --short-name \"aws-agent-toolkit-retrofit\" \"Retrofit incident-pal with AWS Agent Toolkit instead of custom implemented tools\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(xargs cat *)",
+      "Bash(git -C /Users/georgi.kosharov/IdeaProjects/incident-pal log --oneline --all)",
+      "Bash(xargs ls *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(node -e \"import\\('@modelcontextprotocol/sdk/client/index.js'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Bash(node -e \"import\\('@modelcontextprotocol/sdk/client/sse.js'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Bash(git stash *)",
+      "Bash(sed -i '' 's|cloudwatch/CloudWatchLogsTool.js|cloudwatch/CloudWatchLogsToolLegacy.js|g' tests/unit/tools/cloudwatch.test.ts)",
+      "Bash(sed -i '' 's|cloudwatch/LogGroupDiscoveryTool.js|cloudwatch/LogGroupDiscoveryToolLegacy.js|g' tests/unit/tools/log-group-discovery.test.ts)",
+      "Bash(sed -i '' 's|ecs/EcsDeploymentTool.js|ecs/EcsDeploymentToolLegacy.js|g' tests/unit/tools/ecs.test.ts)"
     ]
   }
 }

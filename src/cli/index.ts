@@ -2,12 +2,11 @@
 import { Command } from "commander";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
-import { ECSClient } from "@aws-sdk/client-ecs";
 import { InvestigationAgent } from "../agent/InvestigationAgent.js";
-import { CloudWatchLogsTool } from "../tools/cloudwatch/CloudWatchLogsTool.js";
-import { LogGroupDiscoveryTool } from "../tools/cloudwatch/LogGroupDiscoveryTool.js";
-import { EcsDeploymentTool } from "../tools/ecs/EcsDeploymentTool.js";
+import { AwsToolkitClient } from "../tools/aws-toolkit/AwsToolkitClient.js";
+import { CloudWatchLogsToolV2 } from "../tools/aws-toolkit/CloudWatchLogsToolV2.js";
+import { LogGroupDiscoveryToolV2 } from "../tools/aws-toolkit/LogGroupDiscoveryToolV2.js";
+import { EcsDeploymentToolV2 } from "../tools/aws-toolkit/EcsDeploymentToolV2.js";
 import { ServiceCatalogTool } from "../tools/service-catalog/ServiceCatalogTool.js";
 import type { LinkingKey, InvestigationRequest } from "../models/index.js";
 
@@ -105,15 +104,20 @@ program
     }
 
     const { request, maxDurationMs } = applyEnvOptions(requestOrError);
-    const region = process.env["AWS_REGION"] ?? "us-east-1";
     const catalogPath = process.env["SERVICE_CATALOG_PATH"] ?? join(process.cwd(), "service-catalog.yml");
+    const proxyUrl = process.env["MCP_PROXY_URL"];
+    if (!proxyUrl) {
+      console.error("MCP_PROXY_URL environment variable is required");
+      process.exit(1);
+    }
 
-    const cwClient = new CloudWatchLogsClient({ region });
+    const toolkit = new AwsToolkitClient(proxyUrl);
+    await toolkit.connect();
     const agent = new InvestigationAgent({
       tools: [
-        new CloudWatchLogsTool(cwClient),
-        new LogGroupDiscoveryTool(cwClient),
-        new EcsDeploymentTool(new ECSClient({ region })),
+        new CloudWatchLogsToolV2(toolkit),
+        new LogGroupDiscoveryToolV2(toolkit),
+        new EcsDeploymentToolV2(toolkit),
         new ServiceCatalogTool(catalogPath),
       ],
       maxDurationMs,
@@ -123,9 +127,12 @@ program
     try {
       investigation = await agent.investigate(request);
     } catch (err) {
+      await toolkit.dispose();
       console.error(`Investigation failed: ${String(err)}`);
       process.exit(1);
     }
+
+    await toolkit.dispose();
 
     if (investigation.report) {
       process.stdout.write(investigation.report.markdownContent + "\n");

@@ -1,6 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { ToolRegistry } from "../../../src/agent/ToolRegistry.js";
 import type { Tool, ToolResult } from "../../../src/models/Tool.js";
+import { CloudWatchLogsToolV2 } from "../../../src/tools/aws-toolkit/CloudWatchLogsToolV2.js";
+import { EcsDeploymentToolV2 } from "../../../src/tools/aws-toolkit/EcsDeploymentToolV2.js";
+import { LogGroupDiscoveryToolV2 } from "../../../src/tools/aws-toolkit/LogGroupDiscoveryToolV2.js";
+import type { AwsToolkitClient } from "../../../src/tools/aws-toolkit/AwsToolkitClient.js";
+
+function makeMockToolkitClient(): AwsToolkitClient {
+  return { callAws: vi.fn(), connect: vi.fn(), dispose: vi.fn() } as unknown as AwsToolkitClient;
+}
 
 function makeTool(name: string): Tool {
   return {
@@ -37,6 +45,23 @@ describe("ToolRegistry integration", () => {
 
     expect(registry.getAll()).toHaveLength(4);
     expect(registry.getToolDefinitions()).toHaveLength(4);
+  });
+
+  it("V2 toolkit-backed tools register with correct names and input_schema", () => {
+    const client = makeMockToolkitClient();
+    const registry = new ToolRegistry();
+    registry.register(new CloudWatchLogsToolV2(client));
+    registry.register(new EcsDeploymentToolV2(client));
+    registry.register(new LogGroupDiscoveryToolV2(client));
+
+    const defs = registry.getToolDefinitions();
+    const names = defs.map((d) => d.name);
+    expect(names).toContain("cloudwatch-logs");
+    expect(names).toContain("ecs-deployment");
+    expect(names).toContain("log-group-discovery");
+    for (const def of defs) {
+      expect(def).toHaveProperty("input_schema");
+    }
   });
 
   it("tools from different domains are independently invokable", async () => {

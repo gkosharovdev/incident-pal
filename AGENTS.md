@@ -34,8 +34,7 @@ src/
 │   ├── InvestigationTimer.ts   # wall-clock timeout (MAX_DURATION_MS)
 │   └── prompts.ts              # SYSTEM_PROMPT (cached) + buildInvestigationContext()
 ├── tools/
-│   ├── cloudwatch/             # CloudWatchLogsTool — Logs Insights queries
-│   ├── ecs/                    # EcsDeploymentTool — deployment history
+│   ├── aws-toolkit/            # MCP-backed AWS tools (CloudWatchLogsToolV2, EcsDeploymentToolV2, LogGroupDiscoveryToolV2, AwsToolkitClient)
 │   ├── service-catalog/        # ServiceCatalogTool — resolves log group, cluster, schema
 │   ├── customer-correlation/   # CustomerCorrelationTool — entity lookup HTTP client
 │   └── extensions/
@@ -86,10 +85,13 @@ The short version: `InvestigationAgent` runs a ReAct loop — it sends a context
 4. Register it when constructing `InvestigationAgent`:
 
 ```typescript
+const toolkit = new AwsToolkitClient(process.env["MCP_PROXY_URL"]);
+await toolkit.connect();
 const agent = new InvestigationAgent({
   tools: [
-    new CloudWatchLogsTool(cwClient),
-    new EcsDeploymentTool(ecsClient),
+    new CloudWatchLogsToolV2(toolkit),
+    new EcsDeploymentToolV2(toolkit),
+    new LogGroupDiscoveryToolV2(toolkit),
     new ServiceCatalogTool(catalogPath),
     new YourTool(yourClient),   // ← just add it here
   ],
@@ -106,9 +108,21 @@ See `src/tools/extensions/notification-outbox/NotificationOutboxTool.ts` as a re
 | Variable | Default | Notes |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | — | Required |
-| `AWS_REGION` | `us-east-1` | |
+| `MCP_PROXY_URL` | — | Required — URL of the `mcp-proxy-for-aws` SSE endpoint (e.g. `http://localhost:8080/sse`) |
 | `MAX_DURATION_MS` | `600000` | Wall-clock timeout per investigation |
 | `MAX_ITERATIONS` | `20` | Max agent loop iterations |
 | `SCAN_BUDGET_BYTES` | `1073741824` | Per-investigation CloudWatch scan budget |
 | `MAX_RESULTS_PER_QUERY` | `500` | Truncation threshold |
 | `SERVICE_CATALOG_PATH` | `./service-catalog.yml` | Path to service catalog YAML |
+
+### AWS proxy sidecar
+
+AWS tools are backed by the [mcp-proxy-for-aws](https://gallery.ecr.aws/mcp-proxy-for-aws/mcp-proxy-for-aws) MCP server. Start it before running investigations:
+
+```bash
+docker run -p 8080:8080 \
+  -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+  public.ecr.aws/mcp-proxy-for-aws/mcp-proxy-for-aws:latest
+```
+
+Then set `MCP_PROXY_URL=http://localhost:8080/sse`.

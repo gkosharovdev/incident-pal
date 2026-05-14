@@ -3,13 +3,12 @@ import type { Dispatch, SetStateAction, RefObject } from "react";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-import { fromIni } from "@aws-sdk/credential-providers";
+
 import { InvestigationAgent } from "../../agent/InvestigationAgent.js";
-import { CloudWatchLogsClient } from "@aws-sdk/client-cloudwatch-logs";
-import { ECSClient } from "@aws-sdk/client-ecs";
-import { CloudWatchLogsTool } from "../../tools/cloudwatch/CloudWatchLogsTool.js";
-import { LogGroupDiscoveryTool } from "../../tools/cloudwatch/LogGroupDiscoveryTool.js";
-import { EcsDeploymentTool } from "../../tools/ecs/EcsDeploymentTool.js";
+import { AwsToolkitClient } from "../../tools/aws-toolkit/AwsToolkitClient.js";
+import { CloudWatchLogsToolV2 } from "../../tools/aws-toolkit/CloudWatchLogsToolV2.js";
+import { LogGroupDiscoveryToolV2 } from "../../tools/aws-toolkit/LogGroupDiscoveryToolV2.js";
+import { EcsDeploymentToolV2 } from "../../tools/aws-toolkit/EcsDeploymentToolV2.js";
 import { ServiceCatalogTool } from "../../tools/service-catalog/ServiceCatalogTool.js";
 import type { InvestigationRequest, Investigation, TraceEntry } from "../../models/index.js";
 import type { CredentialConfig } from "../services/KeychainService.js";
@@ -165,30 +164,31 @@ function runRealInvestigation(
   startTimeRef: RefObject<number>,
   timerRef: RefObject<ReturnType<typeof setInterval> | null>,
 ): void {
-  const region = process.env["AWS_REGION"] ?? "us-east-1";
-  const awsCredentials = fromIni({ profile: credentials.awsProfile });
-  const cwClient = new CloudWatchLogsClient({ region, credentials: awsCredentials });
-  const ecsClient = new ECSClient({ region, credentials: awsCredentials });
+  const proxyUrl = process.env["MCP_PROXY_URL"] ?? "";
+  const toolkit = new AwsToolkitClient(proxyUrl);
   const catalogPath = process.env["SERVICE_CATALOG_PATH"] ?? "./service-catalog.yml";
 
-  const agent = new InvestigationAgent({
-    tools: [
-      new CloudWatchLogsTool(cwClient),
-      new LogGroupDiscoveryTool(cwClient),
-      new EcsDeploymentTool(ecsClient),
-      new ServiceCatalogTool(catalogPath),
-    ],
-    anthropicClient: new Anthropic({ apiKey: credentials.anthropicApiKey }),
-    onTraceEntry: (entry): void => {
-      setEntries((prev) => [...prev, traceEntryToStream(entry)]);
-      if (entry.type === "tool-call") {
-        setIteration((prev) => prev + 1);
-      }
-    },
-  });
-
-  agent.investigate(request).then((result) => {
+  (async (): Promise<Investigation> => {
+    await toolkit.connect();
+    const agent = new InvestigationAgent({
+      tools: [
+        new CloudWatchLogsToolV2(toolkit),
+        new LogGroupDiscoveryToolV2(toolkit),
+        new EcsDeploymentToolV2(toolkit),
+        new ServiceCatalogTool(catalogPath),
+      ],
+      anthropicClient: new Anthropic({ apiKey: credentials.anthropicApiKey }),
+      onTraceEntry: (entry): void => {
+        setEntries((prev) => [...prev, traceEntryToStream(entry)]);
+        if (entry.type === "tool-call") {
+          setIteration((prev) => prev + 1);
+        }
+      },
+    });
+    return agent.investigate(request);
+  })().then((result) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    void toolkit.dispose();
     writeInvestigationToDisk(result);
     setInvestigation(result);
     const statusMap: Record<string, InvestigationStatus> = {
@@ -199,6 +199,7 @@ function runRealInvestigation(
     setStatus(statusMap[result.status] ?? "complete");
   }).catch((err: unknown) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    void toolkit.dispose();
     setError(formatAgentError(err));
     setStatus("error");
   });
